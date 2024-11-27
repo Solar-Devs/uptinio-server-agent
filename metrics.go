@@ -56,8 +56,3 @@ func getAttributes() map[string]interface{} {
 		"cpu_cores":   runtime.NumCPU(), // Núcleos detectados.
 	}
 }
-
-// func main() {
-// 	fmt.Println(collectMetrics())
-// 	fmt.Println(getAttributes())
-// }

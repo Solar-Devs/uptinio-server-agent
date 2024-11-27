@@ -8,18 +8,12 @@ import (
 	"time"
 )
 
-type Metric struct {
-	Metric    string  `json:"metric"`
-	Value     float64 `json:"value"`
-	Timestamp string  `json:"timestamp"`
-}
+const (
+	url        = "http://localhost:80/api/v1/server_metrics" // metrics are sent here
+	auth_token = "0c873d920231f78befedd9d7c5a8f8b2"          // authorization token
+)
 
-type Payload struct {
-	Attributes map[string]interface{} `json:"attributes"`
-	Metrics    []Metric               `json:"metrics"`
-}
-
-func sendMetrics(url, token string, payload Payload) error {
+func sendMetrics(payload Payload) error {
 	data, err := json.Marshal(payload)
 	if err != nil {
 		return fmt.Errorf("error marshaling payload: %w", err)
@@ -29,7 +23,7 @@ func sendMetrics(url, token string, payload Payload) error {
 	if err != nil {
 		return fmt.Errorf("error creating request: %w", err)
 	}
-	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Authorization", "Bearer "+auth_token)
 	req.Header.Set("Content-Type", "application/json")
 
 	client := &http.Client{Timeout: 10 * time.Second}

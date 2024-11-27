@@ -6,15 +6,13 @@ import (
 )
 
 const (
-	serverURL       = "http://localhost:80/api/v1/server_metrics"
-	token           = "0c873d920231f78befedd9d7c5a8f8b2"
-	collectInterval = 60 * time.Second
-	sendInterval    = 600 * time.Second
+	collectInterval = 5 * time.Second  // collect metrics in file interval
+	sendInterval    = 15 * time.Second //send metrics to url interval
 )
 
 func main() {
-	collectTicker := time.NewTicker(collectInterval) // Cada minuto para recopilar métricas.
-	sendTicker := time.NewTicker(sendInterval)       // Cada 10 minutos para enviar métricas.
+	collectTicker := time.NewTicker(collectInterval)
+	sendTicker := time.NewTicker(sendInterval)
 	defer collectTicker.Stop()
 	defer sendTicker.Stop()
 
@@ -53,7 +51,7 @@ func main() {
 				continue
 			}
 
-			if err := sendMetrics(serverURL, token, payload); err != nil {
+			if err := sendMetrics(payload); err != nil {
 				fmt.Println("Error sending metrics:", err)
 			} else {
 				fmt.Println("Metrics succesfully sent... cleaning file")
