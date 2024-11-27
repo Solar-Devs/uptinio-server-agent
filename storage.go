@@ -17,13 +17,13 @@ func saveMetricsToFile(newPayload Payload) error {
 
 	file, err := os.Create(filePath)
 	if err != nil {
-		return fmt.Errorf("Error creating file: %w", err)
+		return fmt.Errorf("error creating file: %w", err)
 	}
 	defer file.Close()
 
 	encoder := json.NewEncoder(file)
 	if err := encoder.Encode(existingPayload); err != nil {
-		return fmt.Errorf("Error decoding metrics: %w", err)
+		return fmt.Errorf("error decoding metrics: %w", err)
 	}
 	fmt.Println("Saved metrics to file")
 	return nil
