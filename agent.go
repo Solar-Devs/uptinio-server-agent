@@ -5,14 +5,20 @@ import (
 	"time"
 )
 
-const (
-	collectInterval = 5 * time.Second  // collect metrics in file interval
-	sendInterval    = 15 * time.Second //send metrics to url interval
-)
-
 func main() {
-	collectTicker := time.NewTicker(collectInterval)
-	sendTicker := time.NewTicker(sendInterval)
+
+	config = LoadConfig()
+
+	fmt.Printf("Starting agent with the following configuration:\n"+
+		"Metrics File Path: %s\n"+
+		"Server URL: %s\n"+
+		"Auth Token: %s\n"+
+		"Collect Interval: %v\n"+
+		"Send Interval: %v\n",
+		config.MetricsPath, config.URL, config.AuthToken, config.CollectInterval, config.SendInterval)
+
+	collectTicker := time.NewTicker(config.CollectInterval)
+	sendTicker := time.NewTicker(config.SendInterval)
 	defer collectTicker.Stop()
 	defer sendTicker.Stop()
 
@@ -55,7 +61,7 @@ func main() {
 				fmt.Println("Error sending metrics:", err)
 			} else {
 				fmt.Println("Metrics succesfully sent... cleaning file")
-				_ = clearFile()
+				_ = clearMetricsFile()
 			}
 		}
 	}

@@ -8,40 +8,30 @@ import (
 	"runtime"
 )
 
-const (
-	appName  = "uptinio-server-agent" // Application name folder
-	fileName = "metrics.json"         // File name
-)
-
-// Function to get the base directory where the file will be saved based on the operating system
-func getBaseDir() string {
+// Function to get the base directory where the metrics file will be saved based on the operating system
+func getMetricsBaseDir() string {
 	switch runtime.GOOS {
 	case "windows":
 		// On Windows, the directory structure is:
-		// C:\Users\<USERNAME>\AppData\Local\<appName>
-		// Example: C:\Users\JohnDoe\AppData\Local\uptinio-server-agent
+		// C:\Users\<USERNAME>\AppData\Local
+		// Example: C:\Users\JohnDoe\AppData\Local
 		return os.Getenv("LOCALAPPDATA")
 	case "darwin":
 		// On macOS, the directory structure is:
-		// /Users/<USERNAME>/Library/Application Support/<appName>
-		// Example: /Users/JohnDoe/Library/Application Support/uptinio-server-agent
-		return filepath.Join(os.Getenv("HOME"), "Library", "Application Support", appName)
+		// /Users/<USERNAME>/Library/Application Support
+		// Example: /Users/JohnDoe/Library/Application Support
+		return filepath.Join(os.Getenv("HOME"), "Library", "Application Support")
 	default: // Linux or other systems
 		// On Linux, the directory structure is:
-		// /home/<USERNAME>/.local/share/<appName>
-		// Example: /home/johndoe/.local/share/uptinio-server-agent
-		return filepath.Join(os.Getenv("HOME"), ".local", "share", appName)
+		// /home/<USERNAME>/.local/share
+		// Example: /home/johndoe/.local/share
+		return filepath.Join(os.Getenv("HOME"), ".local", "share")
 	}
-}
-
-// Function to get the full file path
-func getFilePath() string {
-	return filepath.Join(getBaseDir(), fileName)
 }
 
 // Save metrics to file
 func saveMetricsToFile(newPayload Payload) error {
-	filePath := getFilePath() // Get the full file path
+	filePath := config.MetricsPath
 
 	// Create the directory if it doesn't exist
 	if err := os.MkdirAll(filepath.Dir(filePath), 0755); err != nil {
@@ -71,7 +61,7 @@ func saveMetricsToFile(newPayload Payload) error {
 
 // Load metrics from file
 func loadMetricsFromFile() (Payload, error) {
-	filePath := getFilePath() // Get the full file path
+	filePath := config.MetricsPath // Get the full file path
 
 	file, err := os.Open(filePath)
 	if os.IsNotExist(err) {
@@ -90,7 +80,7 @@ func loadMetricsFromFile() (Payload, error) {
 }
 
 // Clear the file by deleting it
-func clearFile() error {
-	filePath := getFilePath() // Get the full file path
+func clearMetricsFile() error {
+	filePath := config.MetricsPath // Get the full file path
 	return os.Remove(filePath)
 }
