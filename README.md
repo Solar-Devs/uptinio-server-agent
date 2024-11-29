@@ -57,8 +57,8 @@ Where the variables have the meanings:
 * `auth-token`: The authorization token used for the request.
 * `collect-interval-sec`: The collection interval in seconds. Default is `60 seconds (1 minute)`
 * `send-interval-sec`: The send interval in seconds. Default is `600 seconds (10 minutes)`
-* `metrics-path`: The path where metrics are stored before being sent. The default directory depends on the operating system, see `getMetricsBaseDir` inside `storage.go`. Example value: `/home/johndoe/.local/share/metrics.json`
-* `config-path`: The path where the configuration file is generated. The default directory depends on the operating system, see `getConfBaseDir` inside `config.go`. Example value: `/home/johndoe/.local/share/config.json`
+* `metrics-path`: The path where metrics are stored before being sent. The default directory depends on the operating system, see `MetricsPath` inside `config.go`. Example value: `/home/johndoe/.local/share/metrics.json`
+* `config-path`: The path where the configuration file is generated. The default directory depends on the operating system, see `DefaultConfigPath` inside `config.go`. Example value: `/home/johndoe/.local/share/config.json`
 
 ## Execute agent
 
