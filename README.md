@@ -53,8 +53,8 @@ To generate a config file, you must add the flag `--create-config` when executin
 
 Where the variables have the meanings:
 
-* `url`: The URL where the collected data will be sent.
-* `auth-token`: The authorization token used for the request.
+* `url`: The URL where the collected data will be sent. **(Required)**
+* `auth-token`: The authorization token used for the request. **(Required)**
 * `collect-interval-sec`: The collection interval in seconds. Default is `60 seconds (1 minute)`
 * `send-interval-sec`: The send interval in seconds. Default is `600 seconds (10 minutes)`
 * `metrics-path`: The path where metrics are stored before being sent. The default directory depends on the operating system, see `MetricsPath` inside `config.go`. Example value: `/home/johndoe/.local/share/metrics.json`
