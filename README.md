@@ -46,8 +46,8 @@ To generate a config file, you must add the flag `--create-config` when executin
   --auth-token "$AUTH_TOKEN" \
   --url "$URL" \
   --collect-interval-sec "$COLLECT_INTERVAL_SEC" \
-  --send-interval-sec "$SEND_INTERVAL_SEC"
-  --metrics-path "$METRICS_PATH"
+  --send-interval-sec "$SEND_INTERVAL_SEC" \
+  --metrics-path "$METRICS_PATH" \
   --config-path "$CONFIG_PATH"
 ```
 
