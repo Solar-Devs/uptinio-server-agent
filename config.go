@@ -10,34 +10,33 @@ import (
 )
 
 var (
-	ConfigPath = filepath.Join(getConfBaseDir(), "uptinio-server-agent-2", "config.json")
+	DefaultConfigPath = filepath.Join(getConfBaseDir(), "uptinio-server-agent", "config.json")
+	ConfigPath        string
 )
 
 // defaultConfig provides default values for the configuration
 var defaultConfig = Config{
-	MetricsPath:     filepath.Join(getMetricsBaseDir(), "uptinio-server-agent", "metrics.json"), // metrics file path
-	URL:             "http://localhost:80/api/v1/server_metrics",                                // Metrics are sent here
-	AuthToken:       "0c873d920231f78befedd9d7c5a8f8b2",                                         // Authorization token
-	CollectInterval: 5 * time.Second,                                                            // Collect metrics interval
-	SendInterval:    15 * time.Second,                                                           // Send metrics interval
+	MetricsPath: filepath.Join(getMetricsBaseDir(), "uptinio-server-agent", "metrics.json"), // metrics file path
+	//URL:             "http://localhost:80/api/v1/server_metrics",                                // Metrics are sent here
+	//AuthToken:       "",                                                                         // Authorization token
+	CollectInterval: 60 * time.Second,  // Collect metrics interval
+	SendInterval:    600 * time.Second, // Send metrics interval
 }
 
 var config Config
 
-// LoadConfig loads the configuration from a file or creates a default one if it doesn't exist
+// LoadConfig loads the configuration from a file
 func LoadConfig() Config {
 	// Try to open the configuration file
 	file, err := os.Open(ConfigPath)
 	if os.IsNotExist(err) {
-		// File doesn't exist, create a default configuration file
-		fmt.Println("Configuration file not found. Creating default configuration.")
-		if err := saveConfig(defaultConfig); err != nil {
-			fmt.Printf("Error saving default configuration: %v\n", err)
-		}
-		return defaultConfig
+		// File doesn't exist
+		panic("Configuration file not found. " +
+			"Please, create one before running the program. " +
+			"Use the --create-config flag. " +
+			"View more information in the README.")
 	} else if err != nil {
-		fmt.Printf("Error opening configuration file, using default configuration: %v\n", err)
-		return defaultConfig
+		panic(fmt.Sprintf("Error opening configuration file: %v", err))
 	}
 	defer file.Close()
 
@@ -45,15 +44,14 @@ func LoadConfig() Config {
 	var config Config
 	decoder := json.NewDecoder(file)
 	if err := decoder.Decode(&config); err != nil {
-		fmt.Printf("Error decoding configuration file, using default configuration: %v\n", err)
-		return defaultConfig
+		panic(fmt.Sprintf("Error decoding configuration file: %v", err))
 	}
 
 	return config
 }
 
-// saveConfig saves the configuration to a file
-func saveConfig(config Config) error {
+// saveConfigFile saves the configuration to a file
+func saveConfigFile(config Config) error {
 
 	// Create the directory if it doesn't exist
 	if err := os.MkdirAll(filepath.Dir(ConfigPath), 0755); err != nil {
@@ -93,4 +91,25 @@ func getConfBaseDir() string {
 		// Example: /home/johndoe/.local/share
 		return filepath.Join(os.Getenv("HOME"), ".local", "share")
 	}
+}
+
+func createConfiguration(authToken string, url string, collectIntervalSec int, sendIntervalSec int, metricsPath string) error {
+	if authToken == "" {
+		return fmt.Errorf("parameter 'auth token' is mandatory")
+	}
+	if url == "" {
+		return fmt.Errorf("parameter 'url' is mandatory")
+	}
+
+	config := Config{
+		MetricsPath:     metricsPath,
+		URL:             url,
+		AuthToken:       authToken,
+		CollectInterval: time.Duration(collectIntervalSec) * time.Second,
+		SendInterval:    time.Duration(sendIntervalSec) * time.Second,
+	}
+
+	err := saveConfigFile(config)
+
+	return err
 }

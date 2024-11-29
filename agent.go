@@ -1,11 +1,29 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"time"
 )
 
 func main() {
+	// available flags
+	createConfig := flag.Bool("create-config", false, "Create a new configuration")
+	authToken := flag.String("auth-token", "", "Authorization token for the agent")
+	url := flag.String("url", "", "Metrics server URL")
+	collectIntervalSec := flag.Int("collect-interval-sec", int(defaultConfig.CollectInterval.Seconds()), "Metrics collection interval in seconds")
+	sendIntervalSec := flag.Int("send-interval-sec", int(defaultConfig.SendInterval.Seconds()), "Metrics sending interval in seconds")
+	metricsPath := flag.String("metrics-path", defaultConfig.MetricsPath, "Metrics file path")
+	flag.StringVar(&ConfigPath, "config-path", DefaultConfigPath, "Config file path, must be a json file")
+
+	flag.Parse()
+
+	if *createConfig {
+		if err := createConfiguration(*authToken, *url, *collectIntervalSec, *sendIntervalSec, *metricsPath); err != nil {
+			fmt.Printf("Error: %s\n", err)
+		}
+		return
+	}
 
 	config = LoadConfig()
 
