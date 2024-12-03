@@ -144,5 +144,3 @@ echo "Installation complete. The agent is now running."
 
 
 # curl -fsSL https://your-server.com/install.sh | bash -s -- --auth-token "my-secret-token" --url "http://my-server.com/api/v1/server_metrics" --collect-interval-sec 10 --send-interval-sec 60
-
-

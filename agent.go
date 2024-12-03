@@ -10,16 +10,17 @@ func main() {
 	// available flags
 	createConfig := flag.Bool("create-config", false, "Create a new configuration")
 	authToken := flag.String("auth-token", "", "Authorization token for the agent")
-	url := flag.String("url", "", "Metrics server URL")
-	collectIntervalSec := flag.Int("collect-interval-sec", int(defaultConfig.CollectInterval.Seconds()), "Metrics collection interval in seconds")
-	sendIntervalSec := flag.Int("send-interval-sec", int(defaultConfig.SendInterval.Seconds()), "Metrics sending interval in seconds")
+	schema := flag.String("schema", defaultConfig.Schema, "Schema like http, https...")
+	host := flag.String("host", defaultConfig.Host, "host")
+	collectIntervalSec := flag.Int("collect-interval-in-sec", int(defaultConfig.CollectIntervalInSeconds), "Metrics collection interval in seconds")
+	sendIntervalSec := flag.Int("send-interval-in-sec", int(defaultConfig.SendIntervalInSeconds), "Metrics sending interval in seconds")
 	metricsPath := flag.String("metrics-path", defaultConfig.MetricsPath, "Metrics file path")
 	flag.StringVar(&ConfigPath, "config-path", DefaultConfigPath, "Config file path, must be a json file")
 
 	flag.Parse()
 
 	if *createConfig {
-		if err := createConfiguration(*authToken, *url, *collectIntervalSec, *sendIntervalSec, *metricsPath); err != nil {
+		if err := createConfiguration(*authToken, *schema, *host, *collectIntervalSec, *sendIntervalSec, *metricsPath); err != nil {
 			fmt.Printf("Error: %s\n", err)
 		}
 		return
@@ -27,16 +28,11 @@ func main() {
 
 	config = LoadConfig()
 
-	fmt.Printf("Starting agent with the following configuration:\n"+
-		"Metrics File Path: %s\n"+
-		"Server URL: %s\n"+
-		"Auth Token: %s\n"+
-		"Collect Interval: %v\n"+
-		"Send Interval: %v\n",
-		config.MetricsPath, config.URL, config.AuthToken, config.CollectInterval, config.SendInterval)
+	fmt.Printf("Starting agent with the following configuration:\n")
+	printConfig(config)
 
-	collectTicker := time.NewTicker(config.CollectInterval)
-	sendTicker := time.NewTicker(config.SendInterval)
+	collectTicker := time.NewTicker(time.Duration(config.CollectIntervalInSeconds) * time.Second)
+	sendTicker := time.NewTicker(time.Duration(config.SendIntervalInSeconds) * time.Second)
 	defer collectTicker.Stop()
 	defer sendTicker.Stop()
 

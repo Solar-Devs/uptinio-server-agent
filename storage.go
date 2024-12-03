@@ -22,10 +22,7 @@ func getMetricsBaseDir() string {
 		// Example: /Users/JohnDoe/Library/Application Support
 		return filepath.Join(os.Getenv("HOME"), "Library", "Application Support")
 	default: // Linux or other systems
-		// On Linux, the directory structure is:
-		// /home/<USERNAME>/.local/share
-		// Example: /home/johndoe/.local/share
-		return filepath.Join(os.Getenv("HOME"), ".local", "share")
+		return "/var/tmp"
 	}
 }
 

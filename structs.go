@@ -1,7 +1,5 @@
 package main
 
-import "time"
-
 type Metric struct {
 	Metric    string  `json:"metric"`
 	Value     float64 `json:"value"`
@@ -15,9 +13,10 @@ type Payload struct {
 
 // Config holds the application configuration
 type Config struct {
-	MetricsPath     string        `json:"metrics_path"`
-	URL             string        `json:"url"`
-	AuthToken       string        `json:"auth_token"`
-	CollectInterval time.Duration `json:"collect_interval"`
-	SendInterval    time.Duration `json:"send_interval"`
+	MetricsPath              string `yaml:"metrics_path"`
+	Schema                   string `yaml:"schema"`
+	Host                     string `yaml:"host"`
+	AuthToken                string `yaml:"auth_token"`
+	CollectIntervalInSeconds int    `yaml:"collect_interval_in_seconds"`
+	SendIntervalInSeconds    int    `yaml:"send_interval_in_seconds"`
 }

@@ -5,16 +5,34 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
+	"path"
 	"time"
 )
+
+const HOST_PATH = "api/v1/server_metrics"
+
+func buildURL(schema, host, hostPath string) (string, error) {
+	u := &url.URL{
+		Scheme: schema,
+		Host:   host,
+	}
+
+	u.Path = path.Join(u.Path, hostPath)
+
+	return u.String(), nil
+}
 
 func sendMetrics(payload Payload) error {
 	data, err := json.Marshal(payload)
 	if err != nil {
 		return fmt.Errorf("error marshaling payload: %w", err)
 	}
-
-	req, err := http.NewRequest("POST", config.URL, bytes.NewBuffer(data))
+	fullURL, err := buildURL(config.Schema, config.Host, HOST_PATH)
+	if err != nil {
+		return fmt.Errorf("Error building URL: %v\n", err)
+	}
+	req, err := http.NewRequest("POST", fullURL, bytes.NewBuffer(data))
 	if err != nil {
 		return fmt.Errorf("error creating request: %w", err)
 	}

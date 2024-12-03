@@ -1,26 +1,26 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
-	"time"
+
+	"gopkg.in/yaml.v3"
 )
 
 var (
-	DefaultConfigPath = filepath.Join(getConfBaseDir(), "uptinio-server-agent", "config.json")
+	DefaultConfigPath = filepath.Join(getConfBaseDir(), "uptinio-server-agent", "config.yaml")
 	ConfigPath        string
 )
 
 // defaultConfig provides default values for the configuration
 var defaultConfig = Config{
-	MetricsPath: filepath.Join(getMetricsBaseDir(), "uptinio-server-agent", "metrics.json"), // metrics file path
-	//URL:             "http://localhost:80/api/v1/server_metrics",                                // Metrics are sent here
-	//AuthToken:       "",                                                                         // Authorization token
-	CollectInterval: 60 * time.Second,  // Collect metrics interval
-	SendInterval:    600 * time.Second, // Send metrics interval
+	MetricsPath:              filepath.Join(getMetricsBaseDir(), "uptinio-server-agent", "metrics.json"), // metrics file path
+	Schema:                   "https",                                                                    // request schema
+	Host:                     "api.staging.uptinio.com",                                                  // server host
+	CollectIntervalInSeconds: 60,                                                                         // Collect metrics interval in seconds
+	SendIntervalInSeconds:    60,                                                                         // Send metrics interval in seconds
 }
 
 var config Config
@@ -42,7 +42,7 @@ func LoadConfig() Config {
 
 	// Decode the configuration file
 	var config Config
-	decoder := json.NewDecoder(file)
+	decoder := yaml.NewDecoder(file)
 	if err := decoder.Decode(&config); err != nil {
 		panic(fmt.Sprintf("Error decoding configuration file: %v", err))
 	}
@@ -52,7 +52,6 @@ func LoadConfig() Config {
 
 // saveConfigFile saves the configuration to a file
 func saveConfigFile(config Config) error {
-
 	// Create the directory if it doesn't exist
 	if err := os.MkdirAll(filepath.Dir(ConfigPath), 0755); err != nil {
 		return fmt.Errorf("error creating directory: %w", err)
@@ -64,11 +63,12 @@ func saveConfigFile(config Config) error {
 	}
 	defer file.Close()
 
-	encoder := json.NewEncoder(file)
+	encoder := yaml.NewEncoder(file)
 	if err := encoder.Encode(&config); err != nil {
 		return fmt.Errorf("error encoding configuration: %w", err)
 	}
-	fmt.Printf("Configuration saved to %s\n", ConfigPath)
+	fmt.Printf("Configuration saved to %s:\n", ConfigPath)
+	printConfig(config)
 	return nil
 }
 
@@ -86,30 +86,48 @@ func getConfBaseDir() string {
 		// Example: /Users/JohnDoe/Library/Application Support
 		return filepath.Join(os.Getenv("HOME"), "Library", "Application Support")
 	default: // Linux or other systems
-		// On Linux, the directory structure is:
-		// /home/<USERNAME>/.local/share
-		// Example: /home/johndoe/.local/share
-		return filepath.Join(os.Getenv("HOME"), ".local", "share")
+		return "/etc"
 	}
 }
 
-func createConfiguration(authToken string, url string, collectIntervalSec int, sendIntervalSec int, metricsPath string) error {
+func createConfiguration(
+	authToken string, schema string, host string,
+	collectIntervalSec int, sendIntervalSec int, metricsPath string) error {
 	if authToken == "" {
 		return fmt.Errorf("parameter 'auth token' is mandatory")
 	}
-	if url == "" {
-		return fmt.Errorf("parameter 'url' is mandatory")
+
+	if !isValidSchema(schema) {
+		return fmt.Errorf("the schema '%s' is invalid. It must be one of: %v\n", schema, VALID_SCHEMAS)
+	}
+
+	if hasSchema(host) {
+		return fmt.Errorf("the host '%s' must not include a schema (like 'http://' or 'https://').\n", host)
 	}
 
 	config := Config{
-		MetricsPath:     metricsPath,
-		URL:             url,
-		AuthToken:       authToken,
-		CollectInterval: time.Duration(collectIntervalSec) * time.Second,
-		SendInterval:    time.Duration(sendIntervalSec) * time.Second,
+		MetricsPath:              metricsPath,
+		Schema:                   schema,
+		Host:                     host,
+		AuthToken:                authToken,
+		CollectIntervalInSeconds: collectIntervalSec,
+		SendIntervalInSeconds:    sendIntervalSec,
 	}
 
 	err := saveConfigFile(config)
 
 	return err
+}
+
+// printConfig prints the configuration in a readable YAML format
+func printConfig(config Config) error {
+	// Marshal the configuration into YAML format
+	yamlData, err := yaml.Marshal(&config)
+	if err != nil {
+		return fmt.Errorf("error marshalling configuration: %w", err)
+	}
+
+	// Print the YAML to the standard output
+	fmt.Println(string(yamlData))
+	return nil
 }
