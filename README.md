@@ -51,6 +51,12 @@ MacOS
 GOOS=darwin GOARCH=amd64 go build -ldflags "-X main.Version=$VERSION" -o agent .
 ```
 
+To check your agent's version, run the binary with the `--get-version` flag. This will display the agent's version:
+
+```
+./agent --get-version
+```
+
 ## Generate (overwrite) a config file
 
 The config file is used by the agent to modify certain behaviours during execution.
