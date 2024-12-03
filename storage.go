@@ -40,6 +40,7 @@ func saveMetricsToFile(newPayload Payload) error {
 	// Combine existing metrics with the new ones
 	existingPayload.Metrics = append(existingPayload.Metrics, newPayload.Metrics...)
 	existingPayload.Attributes = newPayload.Attributes
+	existingPayload.Version = newPayload.Version
 
 	// Create or overwrite the file
 	file, err := os.Create(filePath)

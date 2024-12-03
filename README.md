@@ -33,6 +33,24 @@ GOOS=darwin GOARCH=amd64 go build -o agent .
 
 This generates the binary in the same folder with name `agent`.
 
+## Versioning (optional)
+If you want to manage versions, you can store the `$VERSION` value inside `Version` variable during compilation.
+
+Linux
+```
+GOOS=linux GOARCH=amd64 go build -ldflags "-X main.Version=$VERSION" -o agent .
+```
+
+Windows
+```
+GOOS=windows GOARCH=amd64 go build -ldflags "-X main.Version=$VERSION" -o agent.exe .
+```
+
+MacOS
+```
+GOOS=darwin GOARCH=amd64 go build -ldflags "-X main.Version=$VERSION" -o agent .
+```
+
 ## Generate (overwrite) a config file
 
 The config file is used by the agent to modify certain behaviours during execution.
@@ -99,13 +117,14 @@ If you specified a `config-path` when generating a config file, then you should 
 
 ## How the data is sent to `$URL`?
 
-The request to `$URL` is made by `sender.go`. It sends the server attributes and metrics stored in `$METRICS_PATH` every `$SEND_INTERVAL_SEC`, and has this structure:
+The request to `$URL` is made by `sender.go`. It sends the agent version, server attributes and metrics stored in `$METRICS_PATH` every `$SEND_INTERVAL_SEC`, and has this structure:
 
 ```
   curl -X POST $URL \
   -H "Authorization: Bearer $AUTH_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
+    "agent_version": "x.x.x",
     "attributes": {
       "mac_address": "00-0a-95-9d-67-16",
       "cpu_cores": 4

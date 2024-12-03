@@ -6,6 +6,8 @@ import (
 	"time"
 )
 
+var Version = "unknown" // fill this value when compiling with a flag: -ldflags "-X main.Version=VERSION_VALUE"
+
 func main() {
 	// available flags
 	createConfig := flag.Bool("create-config", false, "Create a new configuration")
@@ -25,7 +27,7 @@ func main() {
 		}
 		return
 	}
-
+	fmt.Printf("Application Version: %s\n", Version)
 	config = LoadConfig()
 
 	fmt.Printf("Starting agent with the following configuration:\n")
@@ -50,6 +52,7 @@ func main() {
 			attributes := getAttributes()
 
 			payload := Payload{
+				Version:    Version,
 				Attributes: attributes,
 				Metrics:    metrics,
 			}

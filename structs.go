@@ -7,6 +7,7 @@ type Metric struct {
 }
 
 type Payload struct {
+	Version    string                 `json:"agent_version"`
 	Attributes map[string]interface{} `json:"attributes"`
 	Metrics    []Metric               `json:"metrics"`
 }
