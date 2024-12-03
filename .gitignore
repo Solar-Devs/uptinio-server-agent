@@ -1,11 +1,6 @@
-metrics.json
-# Ignore all
-*
-
-# Add files with extension
-!*.*
-
-# Ignore binaries with specific extensions
+# Ignore binaries with specific names and extensions
 *.exe
 *.out
 *.bin
+agent
+

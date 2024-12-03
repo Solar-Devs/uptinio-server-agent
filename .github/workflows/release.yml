@@ -1,0 +1,41 @@
+name: Create Release
+
+on:
+  push:
+    tags:
+      - '*'  # Execute when create a tag starting with "v"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Clone code
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # 2. Install go
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.23.3'
+
+      # 3. Compile binaries with version
+      - name: Build binaries
+        run: |
+          VERSION=${{ github.ref_name }} # Obtains tag name (vX.Y.Z)
+          echo "Building with version: $VERSION"
+          GOOS=linux GOARCH=amd64 go build -ldflags "-X main.Version=$VERSION" -o agent-linux-amd64 .
+          GOOS=windows GOARCH=amd64 go build -ldflags "-X main.Version=$VERSION" -o agent-windows-amd64.exe .
+          GOOS=darwin GOARCH=amd64 go build -ldflags "-X main.Version=$VERSION" -o agent-darwin-amd64 .
+
+      # 4. Create release
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            agent-linux-amd64
+            agent-windows-amd64.exe
+            agent-darwin-amd64
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
