@@ -44,21 +44,23 @@ To generate a config file, you must add the flag `--create-config` when executin
 ```
 ./agent --create-config \
   --auth-token "$AUTH_TOKEN" \
-  --url "$URL" \
-  --collect-interval-sec "$COLLECT_INTERVAL_SEC" \
-  --send-interval-sec "$SEND_INTERVAL_SEC" \
+  --schema "$SCHEMA" \
+  --host "HOST" \
+  --collect-interval-in-sec "$COLLECT_INTERVAL_SEC" \
+  --send-interval-in-sec "$SEND_INTERVAL_SEC" \
   --metrics-path "$METRICS_PATH" \
   --config-path "$CONFIG_PATH"
 ```
 
 Where the variables have the meanings:
 
-* `url`: The URL where the collected data will be sent. **(Required)**
 * `auth-token`: The authorization token used for the request. **(Required)**
+* `schema`: The schema of the `host`. Default is `https`
+* `host`: The host where the collected data will be sent. Default is `api.staging.uptinio.com`
 * `collect-interval-sec`: The collection interval in seconds. Default is `60 seconds (1 minute)`
-* `send-interval-sec`: The send interval in seconds. Default is `600 seconds (10 minutes)`
-* `metrics-path`: The path where metrics are stored before being sent. The default directory depends on the operating system, see `MetricsPath` inside `config.go`. Example value: `/home/johndoe/.local/share/metrics.json`
-* `config-path`: The path where the configuration file is generated. The default directory depends on the operating system, see `DefaultConfigPath` inside `config.go`. Example value: `/home/johndoe/.local/share/config.json`
+* `send-interval-sec`: The send interval in seconds. Default is `60 seconds (1 minute)`
+* `metrics-path`: The path where json metrics are stored before being sent. The default directory depends on the operating system, see `MetricsPath` inside `config.go`. Example value: `/home/johndoe/.local/share/metrics.json`
+* `config-path`: The path where the yaml configuration file is generated. The default directory depends on the operating system, see `DefaultConfigPath` inside `config.go`. Example value: `/home/johndoe/.local/share/config.yaml`
 
 ## Execute agent
 
@@ -105,6 +107,8 @@ The request to `$URL` is made by `sender.go`. It sends the server attributes and
 ```
 
 Metrics content is collected every `$COLLECT_INTERVAL_SEC`.
+
+The `$URL` variable follows the structure, `$URL=$SCHEMA://$HOST/$HOST_PATH`, where `$SCHEMA` and `$HOST` are configurable values that can be modified in the configuration file. The third component, `$HOST_PATH`, is a static value defined directly in the `sender.go` code. 
 
 # Installing agent with script
 
