@@ -11,6 +11,7 @@ var Version = "unknown" // fill this value when compiling with a flag: -ldflags 
 func main() {
 	// available flags
 	createConfig := flag.Bool("create-config", false, "Create a new configuration")
+	getVersion := flag.Bool("get-version", false, "Get agent version")
 	authToken := flag.String("auth-token", "", "Authorization token for the agent")
 	schema := flag.String("schema", defaultConfig.Schema, "Schema like http, https...")
 	host := flag.String("host", defaultConfig.Host, "host")
@@ -27,6 +28,12 @@ func main() {
 		}
 		return
 	}
+
+	if *getVersion {
+		fmt.Printf("Agent version: %s\n", Version)
+		return
+	}
+
 	config = LoadConfig()
 
 	fmt.Printf("Starting agent (version: %s) with the following configuration:\n", Version)
