@@ -3,7 +3,7 @@ name: Create Release
 on:
   push:
     tags:
-      - '*'  # Execute when create a tag starting with "v"
+      - '*'  # Execute when create a tag
 
 jobs:
   release:
