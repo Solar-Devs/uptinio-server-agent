@@ -27,10 +27,9 @@ func main() {
 		}
 		return
 	}
-	fmt.Printf("Application Version: %s\n", Version)
 	config = LoadConfig()
 
-	fmt.Printf("Starting agent with the following configuration:\n")
+	fmt.Printf("Starting agent (version: %s) with the following configuration:\n", Version)
 	printConfig(config)
 
 	collectTicker := time.NewTicker(time.Duration(config.CollectIntervalInSeconds) * time.Second)
