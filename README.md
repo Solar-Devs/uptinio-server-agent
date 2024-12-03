@@ -35,7 +35,7 @@ This generates the binary in the same folder with name `agent`.
 
 ## Generate (overwrite) a config file
 
-Config file is used by agent to modify certain behaviours during execution.
+The config file is used by the agent to modify certain behaviours during execution.
 
 To generate a config file, you must add the flag `--create-config` when executing the binary. This config file is required to execute the binary normally.
 
@@ -52,7 +52,7 @@ To generate a config file, you must add the flag `--create-config` when executin
   --config-path "$CONFIG_PATH"
 ```
 
-Where the variables have the meanings:
+The variables in the command have the following meanings:
 
 * `auth-token`: The authorization token used for the request. **(Required)**
 * `schema`: The schema of the `host`. Default is `https`
@@ -61,6 +61,20 @@ Where the variables have the meanings:
 * `send-interval-sec`: The send interval in seconds. Default is `60 seconds (1 minute)`
 * `metrics-path`: The path where json metrics are stored before being sent. The default directory depends on the operating system, see `MetricsPath` inside `config.go`. Example value: `/home/johndoe/.local/share/metrics.json`
 * `config-path`: The path where the yaml configuration file is generated. The default directory depends on the operating system, see `DefaultConfigPath` inside `config.go`. Example value: `/home/johndoe/.local/share/config.yaml`
+
+Depending on the value of `$CONFIG_PATH`, you might need to run the command with elevated privileges (`sudo`), particularly if the config file needs to be written to a protected directory like `/etc/`.
+
+### Example with `sudo`
+```
+sudo ./agent --create-config \
+  --auth-token "$AUTH_TOKEN" \
+  --schema "$SCHEMA" \
+  --host "HOST" \
+  --collect-interval-in-sec "$COLLECT_INTERVAL_SEC" \
+  --send-interval-in-sec "$SEND_INTERVAL_SEC" \
+  --metrics-path "$METRICS_PATH" \
+  --config-path "$CONFIG_PATH"
+```
 
 ## Execute agent
 
