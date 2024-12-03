@@ -34,7 +34,7 @@ GOOS=darwin GOARCH=amd64 go build -o agent .
 This generates the binary in the same folder with name `agent`.
 
 ## Versioning (optional)
-If you want to manage versions, you can store the `$VERSION` value inside `Version` variable during compilation.
+If you want to manage versions, you can store the `$VERSION` value inside `Version` variable during compilation. `$VERSION` default is `unknown`.
 
 Linux
 ```
@@ -124,7 +124,7 @@ The request to `$URL` is made by `sender.go`. It sends the agent version, server
   -H "Authorization: Bearer $AUTH_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "agent_version": "x.x.x",
+    "agent_version": "$VERSION",
     "attributes": {
       "mac_address": "00-0a-95-9d-67-16",
       "cpu_cores": 4
