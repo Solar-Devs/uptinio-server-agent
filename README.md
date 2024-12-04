@@ -161,7 +161,7 @@ sudo bash agent_setup.sh --auth-token $AUTH_TOKEN --host localhost --schema http
 
 This script performs the following steps:
 
-1. **Download the latest binary**: It fetches the latest Linux release binary from the GitHub repository, storing it in the `$AGENT_BINARY` directory. The URL of the binary is provided by the `$BINARY_URL` variable.
+1. **Download the latest binary**: It fetches the latest Linux release binary from the GitHub repository, storing it in the `$AGENT_BINARY` directory.
 
 2. **Create a configuration file**: It generates a configuration file for the agent based on the provided parameters.
 
