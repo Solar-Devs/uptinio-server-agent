@@ -48,7 +48,8 @@ if [ "$UNINSTALL" == "true" ]; then
     systemctl daemon-reload
 
     # Remove configuration file
-    CONFIG_PATH=$(your_command --get-default-config-path)
+    CONFIG_PATH=$("$AGENT_BINARY" --get-default-config-path)
+    echo "Removing configuration file: $CONFIG_PATH"
     rm "$CONFIG_PATH"
 
     # Remove the binary
