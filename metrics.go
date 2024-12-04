@@ -11,6 +11,7 @@ import (
 	"github.com/shirou/gopsutil/disk"
 	"github.com/shirou/gopsutil/host"
 	"github.com/shirou/gopsutil/mem"
+	"github.com/shirou/gopsutil/net"
 )
 
 func collectMetrics() ([]Metric, []error) {
@@ -23,7 +24,7 @@ func collectMetrics() ([]Metric, []error) {
 	if err != nil {
 		errors = append(errors, fmt.Errorf("error getting CPU usage: %w", err))
 	} else {
-		metrics = append(metrics, Metric{Metric: "cpu", Value: cpuUsage, Timestamp: now})
+		metrics = append(metrics, Metric{Metric: "cpu_usage_prc", Value: cpuUsage, Timestamp: now})
 	}
 
 	// Memory
@@ -31,17 +32,45 @@ func collectMetrics() ([]Metric, []error) {
 	if err != nil {
 		errors = append(errors, fmt.Errorf("error getting memory stats: %w", err))
 	} else {
-		memoryUsage := vmStats.UsedPercent
-		metrics = append(metrics, Metric{Metric: "memory", Value: memoryUsage, Timestamp: now})
+		memoryUsage := float64(vmStats.Used)
+		metrics = append(metrics, Metric{Metric: "memory_used_bytes", Value: memoryUsage, Timestamp: now})
 	}
 
-	// Disk
+	// Disk Usage
 	diskStats, err := disk.Usage("/")
 	if err != nil {
 		errors = append(errors, fmt.Errorf("error getting disk stats: %w", err))
 	} else {
-		diskUsage := diskStats.UsedPercent
-		metrics = append(metrics, Metric{Metric: "disk", Value: diskUsage, Timestamp: now})
+		diskUsage := float64(diskStats.Used)
+		metrics = append(metrics, Metric{Metric: "disk_usage_bytes", Value: diskUsage, Timestamp: now})
+	}
+
+	// Network Metrics
+	netStats, err := net.IOCounters(false)
+	if err != nil {
+		errors = append(errors, fmt.Errorf("error getting network stats: %w", err))
+	} else if len(netStats) > 0 {
+		metrics = append(metrics, Metric{
+			Metric:    "network_sent_bytes",
+			Value:     float64(netStats[0].BytesSent), // Total data sent in bytes since uptime
+			Timestamp: now,
+		})
+		metrics = append(metrics, Metric{
+			Metric:    "network_received_bytes",
+			Value:     float64(netStats[0].BytesRecv), // Total data received in bytes since uptime
+			Timestamp: now,
+		})
+
+		metrics = append(metrics, Metric{
+			Metric:    "network_pps_sent",
+			Value:     float64(netStats[0].PacketsSent), // Sent packages
+			Timestamp: now,
+		})
+		metrics = append(metrics, Metric{
+			Metric:    "network_pps_received",
+			Value:     float64(netStats[0].PacketsRecv), // Received packages
+			Timestamp: now,
+		})
 	}
 
 	// Return metrics and any errors encountered
@@ -89,15 +118,29 @@ func getAttributes() map[string]interface{} {
 		kernelVersion = "unknown"
 	}
 
+	diskStats, err := disk.Usage("/")
+	disk_total_bytes := uint64(0)
+	if err == nil {
+		disk_total_bytes = diskStats.Total
+	}
+
+	vmStats, err := mem.VirtualMemory()
+	memory_total_bytes := uint64(0)
+	if err == nil {
+		memory_total_bytes = vmStats.Total
+	}
+
 	return map[string]interface{}{
-		"public_ip":        publicIP,
-		"private_ip":       privateIP,
-		"hostname":         hostname,
-		"mac_address":      macAddress,
-		"cpu_cores":        runtime.NumCPU(),
-		"cpu_model":        cpuModel,
-		"operating_system": operatingSystem,
-		"uptime":           int(uptime),
-		"kernel_version":   kernelVersion,
+		"public_ip":          publicIP,
+		"private_ip":         privateIP,
+		"hostname":           hostname,
+		"mac_address":        macAddress,
+		"cpu_cores":          runtime.NumCPU(),
+		"cpu_model":          cpuModel,
+		"operating_system":   operatingSystem,
+		"uptime":             int(uptime),
+		"kernel_version":     kernelVersion,
+		"disk_total_bytes":   disk_total_bytes,
+		"memory_total_bytes": memory_total_bytes,
 	}
 }
