@@ -79,7 +79,7 @@ To generate a config file, you must add the flag `--create-config` when executin
 The variables in the command have the following meanings:
 
 * `auth-token`: The authorization token used for the request. **(Required)**
-* `schema`: The schema of the `host`. Default is `https`
+* `schema`: The protocol of the `host`. Default is `https`.
 * `host`: The host where the collected data will be sent. Default is `api.staging.uptinio.com`
 * `collect-interval-sec`: The collection interval in seconds. Default is `60 seconds (1 minute)`
 * `send-interval-sec`: The send interval in seconds. Default is `60 seconds (1 minute)`
@@ -149,7 +149,48 @@ Metrics content is collected every `$COLLECT_INTERVAL_SEC`.
 
 The `$URL` variable follows the structure, `$URL=$SCHEMA://$HOST/$HOST_PATH`, where `$SCHEMA` and `$HOST` are configurable values that can be modified in the configuration file. The third component, `$HOST_PATH`, is a static value defined directly in the `sender.go` code. 
 
-# Installing agent with script
+## Installing agent with script
+
+### Linux
+
+To install the agent, use the `agent_setup.sh` script. The following example demonstrates how to create an agent that sends metrics to `localhost`:
+
+```
+sudo bash agent_setup.sh --auth-token $AUTH_TOKEN --host localhost --schema http
+```
+
+This script performs the following steps:
+
+1. **Download the latest binary**: It fetches the latest Linux release binary from the GitHub repository, storing it in the `$AGENT_BINARY` directory. The URL of the binary is provided by the `$BINARY_URL` variable.
+
+2. **Create a configuration file**: It generates a configuration file for the agent based on the provided parameters.
+
+3. **Create a systemd service**: The script sets up a systemd service named `uptinio-agent`, which allows you to manage the agent (e.g., check its status) using commands like:
+
+```
+systemctl status uptinio-agent
+```
+
+The parameters of `agent_setup.sh` are the following:
+
+* `auth-token`: The authorization token used for the request. **(Required)**
+* `schema`: The protocol of the `host`. Default is `https`.
+* `host`: The host where the collected data will be sent. **(Required)**
+* `uninstall`: This will uninstall the agent.
 
 
-# Uninstalling the agent with script
+### Uninstalling the agent
+
+To uninstall the agent, use the `agent_setup.sh` script with the `--uninstall` flag:
+
+```
+sudo bash agent_setup.sh --uninstall
+```
+
+This script performs the following steps:
+
+1. **Removes the uptinio-agent systemd service**: It stops and disables the systemd service associated with the agent.
+
+2. **Deletes the binary**: The script removes the agent binary from the system.
+
+
