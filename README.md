@@ -34,7 +34,7 @@ GOOS=darwin GOARCH=amd64 go build -o agent .
 This generates the binary in the same folder with name `agent`.
 
 ## Versioning (optional)
-If you want to manage versions, you can store the `$VERSION` value inside `Version` variable during compilation. `$VERSION` default is `unknown`.
+If you want to manage versions, you can store the `$VERSION` value inside `Version` variable during compilation. `Version` default is `unknown`.
 
 Linux
 ```
