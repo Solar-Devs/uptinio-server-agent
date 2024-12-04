@@ -84,7 +84,7 @@ The variables in the command have the following meanings:
 * `collect-interval-sec`: The collection interval in seconds. Default is `60 seconds (1 minute)`
 * `send-interval-sec`: The send interval in seconds. Default is `60 seconds (1 minute)`
 * `metrics-path`: The path where json metrics are stored before being sent. The default directory depends on the operating system, see `MetricsPath` inside `config.go`. Example value: `/home/johndoe/.local/share/metrics.json`
-* `config-path`: The path where the yaml configuration file is generated. The default directory depends on the operating system, see `DefaultConfigPath` inside `config.go`. Example value: `/home/johndoe/.local/share/config.yaml`
+* `config-path`: The path where the yaml configuration file is generated. The default directory depends on the operating system, use `./agent --get-default-config-path` to get the default value for your OS. Example value: `/home/johndoe/.local/share/config.yaml`
 
 Depending on the value of `$CONFIG_PATH`, you might need to run the command with elevated privileges (`sudo`), particularly if the config file needs to be written to a protected directory like `/etc/`.
 
@@ -191,6 +191,8 @@ This script performs the following steps:
 
 1. **Removes the uptinio-agent systemd service**: It stops and disables the systemd service associated with the agent.
 
-2. **Deletes the binary**: The script removes the agent binary from the system.
+2. **Deletes the configuration file**: The script removes the configuration file of the agent
+
+3. **Deletes the binary**: The script removes the agent binary from the system.
 
 

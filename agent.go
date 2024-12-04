@@ -12,6 +12,7 @@ func main() {
 	// available flags
 	createConfig := flag.Bool("create-config", false, "Create a new configuration")
 	getVersion := flag.Bool("get-version", false, "Get agent version")
+	getDefaultConfigPath := flag.Bool("get-default-config-path", false, "Get default config path")
 	authToken := flag.String("auth-token", "", "Authorization token for the agent")
 	schema := flag.String("schema", defaultConfig.Schema, "Schema like http, https...")
 	host := flag.String("host", defaultConfig.Host, "host")
@@ -30,7 +31,12 @@ func main() {
 	}
 
 	if *getVersion {
-		fmt.Printf("Agent version: %s\n", Version)
+		fmt.Printf("%s\n", Version)
+		return
+	}
+
+	if *getDefaultConfigPath {
+		fmt.Printf("%s\n", DefaultConfigPath)
 		return
 	}
 

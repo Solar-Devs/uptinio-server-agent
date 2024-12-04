@@ -47,6 +47,10 @@ if [ "$UNINSTALL" == "true" ]; then
     # Reload systemd to apply changes
     systemctl daemon-reload
 
+    # Remove configuration file
+    CONFIG_PATH=$(your_command --get-default-config-path)
+    rm "$CONFIG_PATH"
+
     # Remove the binary
     if [ -f "$AGENT_BINARY" ]; then
         echo "Removing binary: $AGENT_BINARY"
