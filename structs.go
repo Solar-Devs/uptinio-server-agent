@@ -16,6 +16,7 @@ type Payload struct {
 type Config struct {
 	MetricsPath              string `yaml:"metrics_path"`
 	LogPath                  string `yaml:"log_path"`
+	MaxLogSizeMB             int    `yaml:"max_log_file_size_in_MB"`
 	Schema                   string `yaml:"schema"`
 	Host                     string `yaml:"host"`
 	AuthToken                string `yaml:"auth_token"`

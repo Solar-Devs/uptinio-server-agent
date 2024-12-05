@@ -21,12 +21,14 @@ func main() {
 	sendIntervalSec := flag.Int("send-interval-in-sec", int(defaultConfig.SendIntervalInSeconds), "Metrics sending interval in seconds")
 	metricsPath := flag.String("metrics-path", defaultConfig.MetricsPath, "Metrics file path")
 	logPath := flag.String("log-path", defaultConfig.LogPath, "Log file path")
+	maxLogSizeMB := flag.Int("max-log-size-mb", defaultConfig.MaxLogSizeMB, "Max log size in MB")
 	flag.StringVar(&ConfigPath, "config-path", DefaultConfigPath, "Config file path, must be a json file")
 
 	flag.Parse()
 
 	if *createConfig {
-		if err := createConfiguration(*authToken, *schema, *host, *collectIntervalSec, *sendIntervalSec, *metricsPath, *logPath); err != nil {
+		if err := createConfiguration(*authToken, *schema, *host, *collectIntervalSec,
+			*sendIntervalSec, *metricsPath, *logPath, *maxLogSizeMB); err != nil {
 			fmt.Printf("Error: %s\n", err)
 		}
 		return
@@ -47,11 +49,12 @@ func main() {
 	fmt.Printf("Starting agent (version: %s) with the following configuration:\n", Version)
 	printConfig(config)
 
-	logFile, err := getLogFile(*logPath)
+	logWriter, err := NewSizeLimitedLogWriter(*logPath, config.MaxLogSizeMB, config.MaxLogSizeMB)
 	if err != nil {
 		panic(fmt.Sprintf("Error setting up log file: %v", err))
 	}
-	defer logFile.Close()
+	defer logWriter.Close()
+	log.SetOutput(logWriter)
 
 	collectTicker := time.NewTicker(time.Duration(config.CollectIntervalInSeconds) * time.Second)
 	sendTicker := time.NewTicker(time.Duration(config.SendIntervalInSeconds) * time.Second)

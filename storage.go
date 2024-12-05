@@ -83,3 +83,15 @@ func clearMetricsFile() error {
 	filePath := config.MetricsPath // Get the full file path
 	return os.Remove(filePath)
 }
+
+// get base path where logs will be saved
+func getLogBaseDir() string {
+	switch runtime.GOOS {
+	case "windows":
+		return "C:\\ProgramData\\Uptinio-Agent\\logs"
+	case "darwin":
+		return "/usr/local/var/log"
+	default:
+		return "/var/log"
+	}
+}

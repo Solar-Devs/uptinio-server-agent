@@ -74,6 +74,7 @@ To generate a config file, you must add the flag `--create-config` when executin
   --send-interval-in-sec "$SEND_INTERVAL_SEC" \
   --metrics-path "$METRICS_PATH" \
   --log-path "$LOG_PATH" \
+  --max-log-size-mb "$MAX_LOG_SIZE" \
   --config-path "$CONFIG_PATH"
 ```
 
@@ -86,6 +87,7 @@ The variables in the command have the following meanings:
 * `send-interval-sec`: The send interval in seconds. Default is `60 seconds (1 minute)`
 * `metrics-path`: The path where json metrics are stored before being sent. The default directory depends on the operating system, see `MetricsPath` inside `config.go`. Example value: `/home/johndoe/.local/share/metrics.json`
 * `log-path`: The path where logs will be stored. The default directory depends on the operating system, see `LogPath` inside `config.go`.
+* `max-log-size-mb`: The maximum size of the log file in megabytes. It will retain only the most recent logs. Default is set to `10` megabytes.
 * `config-path`: The path where the yaml configuration file is generated. The default directory depends on the operating system, use `./agent --get-default-config-path` to get the default value for your OS. Example value: `/home/johndoe/.local/share/config.yaml`
 
 Depending on the value of `$CONFIG_PATH`, you might need to run the command with elevated privileges (`sudo`), particularly if the config file needs to be written to a protected directory like `/etc/`.
@@ -100,6 +102,7 @@ sudo ./agent --create-config \
   --send-interval-in-sec "$SEND_INTERVAL_SEC" \
   --metrics-path "$METRICS_PATH" \
   --log-path "$LOG_PATH" \
+  --max-log-size-mb "$MAX_LOG_SIZE" \
   --config-path "$CONFIG_PATH"
 ```
 
@@ -157,7 +160,9 @@ The request to `$URL` is made by `sender.go`. It sends the agent version, server
 
 Metrics content is collected every `$COLLECT_INTERVAL_SEC`.
 
-The `$URL` variable follows the structure, `$URL=$SCHEMA://$HOST/$HOST_PATH`, where `$SCHEMA` and `$HOST` are configurable values that can be modified in the configuration file. The third component, `$HOST_PATH`, is a static value defined directly in the `sender.go` code. 
+The `$URL` variable follows the structure, `$URL=$SCHEMA://$HOST/$HOST_PATH`, where `$SCHEMA` and `$HOST` are configurable values that can be modified in the configuration file. The third component, `$HOST_PATH`, is a static value defined directly in the `sender.go` code.
+
+Every time the request response is a `201` (success), the local metrics file is cleared.
 
 ## Installing agent with script
 

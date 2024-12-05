@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -19,6 +18,7 @@ var (
 var defaultConfig = Config{
 	MetricsPath:              filepath.Join(getMetricsBaseDir(), "uptinio-agent", "metrics.json"), // metrics file path
 	LogPath:                  filepath.Join(getLogBaseDir(), "uptinio-agent", "agent.log"),        // log path
+	MaxLogSizeMB:             10,                                                                  //max log fie size
 	Schema:                   "https",                                                             // request schema
 	Host:                     "beta.uptinio.com",                                                  // server host
 	CollectIntervalInSeconds: 60,                                                                  // Collect metrics interval in seconds
@@ -92,39 +92,10 @@ func getConfBaseDir() string {
 	}
 }
 
-// get base path where logs will be saved
-func getLogBaseDir() string {
-	switch runtime.GOOS {
-	case "windows":
-		return "C:\\ProgramData\\Uptinio-Agent\\logs"
-	case "darwin":
-		return "/usr/local/var/log"
-	default:
-		return "/var/log"
-	}
-}
-
-func getLogFile(logFilePath string) (*os.File, error) { // want to return logfile and error
-	// Create the directory if it doesn't exist
-	if err := os.MkdirAll(filepath.Dir(logFilePath), 0755); err != nil {
-		return nil, err
-	}
-
-	// Open the log file in append mode, creating it if it doesn't exist
-	logFile, err := os.OpenFile(logFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		return nil, err
-	}
-
-	// Set the log output to the log file
-	log.SetOutput(logFile)
-
-	return logFile, nil
-}
-
 func createConfiguration(
 	authToken string, schema string, host string,
-	collectIntervalSec int, sendIntervalSec int, metricsPath string, logPath string) error {
+	collectIntervalSec int, sendIntervalSec int,
+	metricsPath string, logPath string, maxLogSizeMB int) error {
 	if authToken == "" {
 		return fmt.Errorf("parameter 'auth token' is mandatory")
 	}
@@ -140,6 +111,7 @@ func createConfiguration(
 	config := Config{
 		MetricsPath:              metricsPath,
 		LogPath:                  logPath,
+		MaxLogSizeMB:             maxLogSizeMB,
 		Schema:                   schema,
 		Host:                     host,
 		AuthToken:                authToken,
