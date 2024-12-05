@@ -118,7 +118,7 @@ Finally you can run the agent:
 ./agent
 ```
 
-You may need to run the agent with `sudo` if `$METRICS_PATH` or `$LOG_PATH` are in protected directories, as write operations and file creation are required.".
+You may need to run the agent with `sudo` if `$METRICS_PATH` or `$LOG_PATH` are in protected directories, as write operations and file creation are required.
 
 ```
 sudo ./agent
