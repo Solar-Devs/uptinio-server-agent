@@ -73,6 +73,7 @@ To generate a config file, you must add the flag `--create-config` when executin
   --collect-interval-in-sec "$COLLECT_INTERVAL_SEC" \
   --send-interval-in-sec "$SEND_INTERVAL_SEC" \
   --metrics-path "$METRICS_PATH" \
+  --log-path "$LOG_PATH" \
   --config-path "$CONFIG_PATH"
 ```
 
@@ -80,10 +81,11 @@ The variables in the command have the following meanings:
 
 * `auth-token`: The authorization token used for the request. **(Required)**
 * `schema`: The protocol of the `host`. Default is `https`.
-* `host`: The host where the collected data will be sent. Default is `api.staging.uptinio.com`
+* `host`: The host where the collected data will be sent. Default is `beta.uptinio.com`
 * `collect-interval-sec`: The collection interval in seconds. Default is `60 seconds (1 minute)`
 * `send-interval-sec`: The send interval in seconds. Default is `60 seconds (1 minute)`
 * `metrics-path`: The path where json metrics are stored before being sent. The default directory depends on the operating system, see `MetricsPath` inside `config.go`. Example value: `/home/johndoe/.local/share/metrics.json`
+* `log-path`: The path where logs will be stored. The default directory depends on the operating system, see `LogPath` inside `config.go`.
 * `config-path`: The path where the yaml configuration file is generated. The default directory depends on the operating system, use `./agent --get-default-config-path` to get the default value for your OS. Example value: `/home/johndoe/.local/share/config.yaml`
 
 Depending on the value of `$CONFIG_PATH`, you might need to run the command with elevated privileges (`sudo`), particularly if the config file needs to be written to a protected directory like `/etc/`.
@@ -97,6 +99,7 @@ sudo ./agent --create-config \
   --collect-interval-in-sec "$COLLECT_INTERVAL_SEC" \
   --send-interval-in-sec "$SEND_INTERVAL_SEC" \
   --metrics-path "$METRICS_PATH" \
+  --log-path "$LOG_PATH" \
   --config-path "$CONFIG_PATH"
 ```
 
@@ -114,6 +117,13 @@ Finally you can run the agent:
 ```
 ./agent
 ```
+
+You may need to run the agent with `sudo` if `$METRICS_PATH` or `$LOG_PATH` are in protected directories, as write operations and file creation are required.".
+
+```
+sudo ./agent
+```
+
 
 If you specified a `config-path` when generating a config file, then you should use the same value when executing the agent:
 

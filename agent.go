@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
 	"time"
 )
 
@@ -19,12 +20,13 @@ func main() {
 	collectIntervalSec := flag.Int("collect-interval-in-sec", int(defaultConfig.CollectIntervalInSeconds), "Metrics collection interval in seconds")
 	sendIntervalSec := flag.Int("send-interval-in-sec", int(defaultConfig.SendIntervalInSeconds), "Metrics sending interval in seconds")
 	metricsPath := flag.String("metrics-path", defaultConfig.MetricsPath, "Metrics file path")
+	logPath := flag.String("log-path", defaultConfig.LogPath, "Log file path")
 	flag.StringVar(&ConfigPath, "config-path", DefaultConfigPath, "Config file path, must be a json file")
 
 	flag.Parse()
 
 	if *createConfig {
-		if err := createConfiguration(*authToken, *schema, *host, *collectIntervalSec, *sendIntervalSec, *metricsPath); err != nil {
+		if err := createConfiguration(*authToken, *schema, *host, *collectIntervalSec, *sendIntervalSec, *metricsPath, *logPath); err != nil {
 			fmt.Printf("Error: %s\n", err)
 		}
 		return
@@ -45,6 +47,12 @@ func main() {
 	fmt.Printf("Starting agent (version: %s) with the following configuration:\n", Version)
 	printConfig(config)
 
+	logFile, err := getLogFile(*logPath)
+	if err != nil {
+		panic(fmt.Sprintf("Error setting up log file: %v", err))
+	}
+	defer logFile.Close()
+
 	collectTicker := time.NewTicker(time.Duration(config.CollectIntervalInSeconds) * time.Second)
 	sendTicker := time.NewTicker(time.Duration(config.SendIntervalInSeconds) * time.Second)
 	defer collectTicker.Stop()
@@ -55,9 +63,9 @@ func main() {
 		case <-collectTicker.C:
 			metrics, errors := collectMetrics()
 			if len(errors) > 0 {
-				fmt.Println("Errors encountered while collecting metrics:")
+				log.Println("Errors encountered while collecting metrics:")
 				for _, err := range errors {
-					fmt.Println(err)
+					log.Println(err)
 				}
 			}
 
@@ -70,26 +78,26 @@ func main() {
 			}
 
 			if err := saveMetricsToFile(payload); err != nil {
-				fmt.Println("Error saving metrics:", err)
+				log.Println("Error saving metrics:", err)
 			}
 
 		case <-sendTicker.C:
-			fmt.Println("Trying to send metrics to server...")
+			log.Println("Trying to send metrics to server...")
 			payload, err := loadMetricsFromFile()
 			if err != nil {
-				fmt.Println("Error loading metrics from file:", err)
+				log.Println("Error loading metrics from file:", err)
 				continue
 			}
 
 			if len(payload.Metrics) == 0 {
-				fmt.Println("No metrics available to send")
+				log.Println("No metrics available to send")
 				continue
 			}
 
 			if err := sendMetrics(payload); err != nil {
-				fmt.Println("Error sending metrics:", err)
+				log.Println("Error sending metrics:", err)
 			} else {
-				fmt.Println("Metrics succesfully sent... cleaning file")
+				log.Println("Metrics succesfully sent... cleaning metrics file")
 				_ = clearMetricsFile()
 			}
 		}

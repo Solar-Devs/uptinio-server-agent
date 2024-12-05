@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -53,7 +54,7 @@ func saveMetricsToFile(newPayload Payload) error {
 	if err := encoder.Encode(existingPayload); err != nil {
 		return fmt.Errorf("error encoding metrics: %w", err)
 	}
-	fmt.Println("Saved metrics to file at:", filePath)
+	log.Println("Saved metrics to file at:", filePath)
 	return nil
 }
 

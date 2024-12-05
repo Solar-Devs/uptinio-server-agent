@@ -15,6 +15,7 @@ type Payload struct {
 // Config holds the application configuration
 type Config struct {
 	MetricsPath              string `yaml:"metrics_path"`
+	LogPath                  string `yaml:"log_path"`
 	Schema                   string `yaml:"schema"`
 	Host                     string `yaml:"host"`
 	AuthToken                string `yaml:"auth_token"`

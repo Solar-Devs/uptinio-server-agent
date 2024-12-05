@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -10,17 +11,18 @@ import (
 )
 
 var (
-	DefaultConfigPath = filepath.Join(getConfBaseDir(), "uptinio-server-agent", "config.yaml")
+	DefaultConfigPath = filepath.Join(getConfBaseDir(), "uptinio-agent.yaml")
 	ConfigPath        string
 )
 
 // defaultConfig provides default values for the configuration
 var defaultConfig = Config{
-	MetricsPath:              filepath.Join(getMetricsBaseDir(), "uptinio-server-agent", "metrics.json"), // metrics file path
-	Schema:                   "https",                                                                    // request schema
-	Host:                     "api.staging.uptinio.com",                                                  // server host
-	CollectIntervalInSeconds: 60,                                                                         // Collect metrics interval in seconds
-	SendIntervalInSeconds:    60,                                                                         // Send metrics interval in seconds
+	MetricsPath:              filepath.Join(getMetricsBaseDir(), "uptinio-agent", "metrics.json"), // metrics file path
+	LogPath:                  filepath.Join(getLogBaseDir(), "uptinio-agent", "agent.log"),        // log path
+	Schema:                   "https",                                                             // request schema
+	Host:                     "beta.uptinio.com",                                                  // server host
+	CollectIntervalInSeconds: 60,                                                                  // Collect metrics interval in seconds
+	SendIntervalInSeconds:    60,                                                                  // Send metrics interval in seconds
 }
 
 var config Config
@@ -72,7 +74,7 @@ func saveConfigFile(config Config) error {
 	return nil
 }
 
-// Function to get the base directory where the metrics file will be saved based on the operating system
+// get base path where configuration will be saved
 func getConfBaseDir() string {
 	switch runtime.GOOS {
 	case "windows":
@@ -90,9 +92,39 @@ func getConfBaseDir() string {
 	}
 }
 
+// get base path where logs will be saved
+func getLogBaseDir() string {
+	switch runtime.GOOS {
+	case "windows":
+		return "C:\\ProgramData\\Uptinio-Agent\\logs"
+	case "darwin":
+		return "/usr/local/var/log"
+	default:
+		return "/var/log"
+	}
+}
+
+func getLogFile(logFilePath string) (*os.File, error) { // want to return logfile and error
+	// Create the directory if it doesn't exist
+	if err := os.MkdirAll(filepath.Dir(logFilePath), 0755); err != nil {
+		return nil, err
+	}
+
+	// Open the log file in append mode, creating it if it doesn't exist
+	logFile, err := os.OpenFile(logFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return nil, err
+	}
+
+	// Set the log output to the log file
+	log.SetOutput(logFile)
+
+	return logFile, nil
+}
+
 func createConfiguration(
 	authToken string, schema string, host string,
-	collectIntervalSec int, sendIntervalSec int, metricsPath string) error {
+	collectIntervalSec int, sendIntervalSec int, metricsPath string, logPath string) error {
 	if authToken == "" {
 		return fmt.Errorf("parameter 'auth token' is mandatory")
 	}
@@ -107,6 +139,7 @@ func createConfiguration(
 
 	config := Config{
 		MetricsPath:              metricsPath,
+		LogPath:                  logPath,
 		Schema:                   schema,
 		Host:                     host,
 		AuthToken:                authToken,

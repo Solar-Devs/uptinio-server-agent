@@ -1,9 +1,15 @@
 #!/bin/bash
 
+# Check if the script is run as root
+if [[ $EUID -ne 0 ]]; then
+  echo "This script must be run with sudo or as root." >&2
+  exit 1
+fi
+
 # Required values
 AUTH_TOKEN="" # validation token when sending collected data
-HOST="" # URL to send collected data
 # Optional values
+HOST="beta.uptinio.com" # URL to send collected data
 SCHEMA=https
 UNINSTALL=false
 # Constants
@@ -13,16 +19,21 @@ SERVICE_NAME=uptinio-agent.service
 SERVICE_FILE=/etc/systemd/system/$SERVICE_NAME
 
 # Parse arguments
-while [[ "$#" -gt 0 ]]; do
-    case $1 in
-        --auth-token) AUTH_TOKEN="$2"; shift ;;
-        --host) HOST="$2"; shift ;;
-        --schema) SCHEMA="$2"; shift ;;
-        --uninstall) UNINSTALL=true ;;
-        *) echo "Unknown parameter passed: $1"; exit 1 ;;
-    esac
-    shift
-done
+if [[ "$#" -eq 1 && "$1" != "--uninstall" ]]; then
+    AUTH_TOKEN="$1"
+else
+    while [[ "$#" -gt 0 ]]; do
+        case $1 in
+            --auth-token) AUTH_TOKEN="$2"; shift ;;
+            --host) HOST="$2"; shift ;;
+            --schema) SCHEMA="$2"; shift ;;
+            --uninstall) UNINSTALL=true ;;
+            *) echo "Unknown parameter passed: $1"; exit 1 ;;
+        esac
+        shift
+    done
+fi
+
 
 if [ "$UNINSTALL" == "true" ]; then
     echo "Uninstalling uptinio-agent..."
@@ -65,11 +76,6 @@ fi
 # Check required parameters
 if [ -z "$AUTH_TOKEN" ]; then
     echo "Error: --auth-token is required."
-    exit 1
-fi
-
-if [ -z "$HOST" ]; then
-    echo "Error: --host is required."
     exit 1
 fi
 
