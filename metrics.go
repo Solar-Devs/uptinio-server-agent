@@ -20,11 +20,11 @@ func collectMetrics() ([]Metric, []error) {
 	var errors []error
 
 	// CPU
-	cpuUsage, err := metric_functions.GetCPUUsage()
+	cpuUsage, err := metric_functions.GetCPUUsageAWSUnits()
 	if err != nil {
 		errors = append(errors, fmt.Errorf("error getting CPU usage: %w", err))
 	} else {
-		metrics = append(metrics, Metric{Metric: "cpu_usage_prc", Value: cpuUsage, Timestamp: now})
+		metrics = append(metrics, Metric{Metric: "cpu_usage", Value: cpuUsage, Timestamp: now})
 	}
 
 	// Memory

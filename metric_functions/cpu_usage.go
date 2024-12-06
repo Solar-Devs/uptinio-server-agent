@@ -2,11 +2,25 @@ package metric_functions
 
 import (
 	"fmt"
+	"math"
 	"os/exec"
 	"runtime"
 	"strconv"
 	"strings"
 )
+
+// Gets CPU usage like AWS: 1024 units = 1 core usage.
+func GetCPUUsageAWSUnits() (float64, error) {
+	cpuUsagePercent, err := GetCPUUsage()
+	if err != nil {
+		return 0, err
+	}
+
+	totalCPUs := runtime.NumCPU()
+
+	awsCPUUnits := math.Round((cpuUsagePercent * float64(totalCPUs) * 1024) / 100)
+	return awsCPUUnits, nil
+}
 
 func GetCPUUsage() (float64, error) {
 	switch runtime.GOOS {
@@ -83,12 +97,3 @@ func getCPUUsageWindows() (float64, error) {
 	}
 	return 0, fmt.Errorf("could not parse wmic output")
 }
-
-// func main() {
-// 	usage, err := getCPUUsage()
-// 	if err != nil {
-// 		fmt.Println("Error getting CPU usage:", err)
-// 	} else {
-// 		fmt.Printf("CPU Usage: %.2f%%\n", usage)
-// 	}
-// }
