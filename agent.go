@@ -11,36 +11,18 @@ var Version = "unknown" // fill this value when compiling with a flag: -ldflags 
 
 func main() {
 	// available flags
-	createConfig := flag.Bool("create-config", false, "Create a new configuration")
 	getVersion := flag.Bool("get-version", false, "Get agent version")
-	getDefaultConfigPath := flag.Bool("get-default-config-path", false, "Get default config path")
-	authToken := flag.String("auth-token", "", "Authorization token for the agent")
-	schema := flag.String("schema", defaultConfig.Schema, "Schema like http, https...")
-	host := flag.String("host", defaultConfig.Host, "host")
-	collectIntervalSec := flag.Int("collect-interval-in-sec", int(defaultConfig.CollectIntervalInSeconds), "Metrics collection interval in seconds")
-	sendIntervalSec := flag.Int("send-interval-in-sec", int(defaultConfig.SendIntervalInSeconds), "Metrics sending interval in seconds")
-	metricsPath := flag.String("metrics-path", defaultConfig.MetricsPath, "Metrics file path")
-	logPath := flag.String("log-path", defaultConfig.LogPath, "Log file path")
-	maxLogSizeMB := flag.Int("max-log-size-mb", defaultConfig.MaxLogSizeMB, "Max log size in MB")
-	flag.StringVar(&ConfigPath, "config-path", DefaultConfigPath, "Config file path, must be a json file")
+	flag.StringVar(&ConfigPath, "config-path", "", "Config file path, must be a yaml file")
 
 	flag.Parse()
-
-	if *createConfig {
-		if err := createConfiguration(*authToken, *schema, *host, *collectIntervalSec,
-			*sendIntervalSec, *metricsPath, *logPath, *maxLogSizeMB); err != nil {
-			fmt.Printf("Error: %s\n", err)
-		}
-		return
-	}
 
 	if *getVersion {
 		fmt.Printf("%s\n", Version)
 		return
 	}
 
-	if *getDefaultConfigPath {
-		fmt.Printf("%s\n", DefaultConfigPath)
+	if ConfigPath == "" {
+		fmt.Printf("parameter 'config-path' is mandatory")
 		return
 	}
 
@@ -49,7 +31,7 @@ func main() {
 	fmt.Printf("Starting agent (version: %s) with the following configuration:\n", Version)
 	printConfig(config)
 
-	logWriter, err := NewSizeLimitedLogWriter(*logPath, config.MaxLogSizeMB, config.MaxLogSizeMB)
+	logWriter, err := NewSizeLimitedLogWriter(config.LogPath, config.MaxLogSizeMB, int(float64(config.MaxLogSizeMB)*0.9))
 	if err != nil {
 		panic(fmt.Sprintf("Error setting up log file: %v", err))
 	}

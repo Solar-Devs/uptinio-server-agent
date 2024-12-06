@@ -12,7 +12,59 @@ The **Server Monitor Agent** is a lightweight Go-based tool designed to periodic
 
 ---
 
-## Generate binary
+## Installing agent with script
+
+### Linux
+
+To install the agent, use the `linux_install.sh` script. The following example demonstrates how to create an agent that sends metrics to `localhost`:
+
+```
+sudo bash agent_setup.sh --auth-token $AUTH_TOKEN --host localhost --schema http
+```
+
+This script performs the following steps:
+
+1. **Download the latest binary**: It fetches the latest Linux release binary from the GitHub repository, storing it in the `$AGENT_BINARY` directory, which is `/usr/local/bin/uptinio-agent`.
+
+2. **Create a configuration file**: It generates a configuration file for the agent based on the provided parameters. By default, the configutation is stored in `/etc/uptinio-agent.yaml`
+
+3. **Create a systemd service**: The script sets up a systemd service named `uptinio-agent`, which allows you to manage the agent (e.g., check its status) using commands like:
+
+```
+systemctl status uptinio-agent
+```
+
+The parameters of `agent_setup.sh` are the following:
+
+* `auth-token`: The authorization token used for the request. **(Required)**
+* `schema`: The protocol of the `host`. Default is `https`.
+* `host`: The host where the collected data will be sent. Default is `beta.uptinio.com`
+* `collect-interval-sec`: The collection interval in seconds. Default is `60 seconds (1 minute)`
+* `send-interval-sec`: The send interval in seconds. Default is `60 seconds (1 minute)`
+* `metrics-path`: The path where json metrics are stored before being sent. The default directory is `/var/tmp/uptinio-agent/metrics.json`.
+* `log-path`: The path where logs will be stored. The default directory is `/var/log/uptinio-agent/agent.log`.
+* `max-log-size-mb`: The maximum size of the log file in megabytes. It will retain only the most recent logs. Default is set to `1024` megabytes (`1` GB).
+* `config-path`: The path where the yaml configuration file is generated, by default is `/etc/uptinio-agent.yaml`.
+* `uninstall`: This will uninstall the agent.
+
+
+### Uninstalling the agent
+
+To uninstall the agent, use the `linux_installer.sh` script with the `--uninstall` flag:
+
+```
+sudo bash agent_setup.sh --uninstall
+```
+
+This script performs the following steps:
+
+1. **Removes the uptinio-agent systemd service**: It stops, disables an removes the systemd service associated with the agent.
+
+2. **Deletes agent files**: The script removes the configuration, metrics and log file of the agent.
+
+3. **Deletes the binary**: The script removes the agent binary from the system.
+
+## Generate agent binary
 
 Clone the repository, move to folder repo and generate your binary depending on your operating system running the corresponding instruction:
 
@@ -57,81 +109,37 @@ To check your agent's version, run the binary with the `--get-version` flag. Thi
 ./agent --get-version
 ```
 
-## Generate (overwrite) a config file
+## Execute agent manually
 
-The config file is used by the agent to modify certain behaviours during execution.
+Before executing the agent, generate a yaml config file in your `$CONFIG_PATH`, for example, `/etc/my-config.yaml`, and fill it with your custom values:
 
-To generate a config file, you must add the flag `--create-config` when executing the binary. This config file is required to execute the binary normally.
-
-
-### Example Command
 ```
-./agent --create-config \
-  --auth-token "$AUTH_TOKEN" \
-  --schema "$SCHEMA" \
-  --host "HOST" \
-  --collect-interval-in-sec "$COLLECT_INTERVAL_SEC" \
-  --send-interval-in-sec "$SEND_INTERVAL_SEC" \
-  --metrics-path "$METRICS_PATH" \
-  --log-path "$LOG_PATH" \
-  --max-log-size-mb "$MAX_LOG_SIZE" \
-  --config-path "$CONFIG_PATH"
+metrics_path: "$METRICS_PATH"
+log_path: "$LOG_PATH"
+max_log_file_size_in_MB: $MAX_LOG_SIZE
+schema: "$SCHEMA"
+host: "$HOST"
+auth_token: "$AUTH_TOKEN"
+collect_interval_in_seconds: $COLLECT_INTERVAL
+send_interval_in_seconds: $SEND_INTERVAL
 ```
 
-The variables in the command have the following meanings:
-
-* `auth-token`: The authorization token used for the request. **(Required)**
-* `schema`: The protocol of the `host`. Default is `https`.
-* `host`: The host where the collected data will be sent. Default is `beta.uptinio.com`
-* `collect-interval-sec`: The collection interval in seconds. Default is `60 seconds (1 minute)`
-* `send-interval-sec`: The send interval in seconds. Default is `60 seconds (1 minute)`
-* `metrics-path`: The path where json metrics are stored before being sent. The default directory depends on the operating system, see `MetricsPath` inside `config.go`. Example value: `/home/johndoe/.local/share/metrics.json`
-* `log-path`: The path where logs will be stored. The default directory depends on the operating system, see `LogPath` inside `config.go`.
-* `max-log-size-mb`: The maximum size of the log file in megabytes. It will retain only the most recent logs. Default is set to `10` megabytes.
-* `config-path`: The path where the yaml configuration file is generated. The default directory depends on the operating system, use `./agent --get-default-config-path` to get the default value for your OS. Example value: `/home/johndoe/.local/share/config.yaml`
-
-Depending on the value of `$CONFIG_PATH`, you might need to run the command with elevated privileges (`sudo`), particularly if the config file needs to be written to a protected directory like `/etc/`.
-
-### Example with `sudo`
-```
-sudo ./agent --create-config \
-  --auth-token "$AUTH_TOKEN" \
-  --schema "$SCHEMA" \
-  --host "HOST" \
-  --collect-interval-in-sec "$COLLECT_INTERVAL_SEC" \
-  --send-interval-in-sec "$SEND_INTERVAL_SEC" \
-  --metrics-path "$METRICS_PATH" \
-  --log-path "$LOG_PATH" \
-  --max-log-size-mb "$MAX_LOG_SIZE" \
-  --config-path "$CONFIG_PATH"
-```
-
-## Execute agent
-
-Before executing the agent, generate a config file (previous section).
 Then, be sure to have execute permissions on binary:
 
 ```
 chmod +x agent
 ```
 
-Finally you can run the agent:
+Finally you can run the agent always providing the `$CONFIG_PATH`:
 
 ```
-./agent
+./agent --config-path=$CONFIG_PATH
 ```
 
 You may need to run the agent with `sudo` if `$METRICS_PATH` or `$LOG_PATH` are in protected directories, as write operations and file creation are required.
 
 ```
-sudo ./agent
-```
-
-
-If you specified a `config-path` when generating a config file, then you should use the same value when executing the agent:
-
-```
-./agent --config-path=$CONFIG_PATH
+sudo ./agent --config-path=$CONFIG_PATH
 ```
 
 ## How the data is sent to `$URL`?
@@ -163,51 +171,3 @@ Metrics content is collected every `$COLLECT_INTERVAL_SEC`.
 The `$URL` variable follows the structure, `$URL=$SCHEMA://$HOST/$HOST_PATH`, where `$SCHEMA` and `$HOST` are configurable values that can be modified in the configuration file. The third component, `$HOST_PATH`, is a static value defined directly in the `sender.go` code.
 
 Every time the request response is a `201` (success), the local metrics file is cleared.
-
-## Installing agent with script
-
-### Linux
-
-To install the agent, use the `agent_setup.sh` script. The following example demonstrates how to create an agent that sends metrics to `localhost`:
-
-```
-sudo bash agent_setup.sh --auth-token $AUTH_TOKEN --host localhost --schema http
-```
-
-This script performs the following steps:
-
-1. **Download the latest binary**: It fetches the latest Linux release binary from the GitHub repository, storing it in the `$AGENT_BINARY` directory.
-
-2. **Create a configuration file**: It generates a configuration file for the agent based on the provided parameters.
-
-3. **Create a systemd service**: The script sets up a systemd service named `uptinio-agent`, which allows you to manage the agent (e.g., check its status) using commands like:
-
-```
-systemctl status uptinio-agent
-```
-
-The parameters of `agent_setup.sh` are the following:
-
-* `auth-token`: The authorization token used for the request. **(Required)**
-* `schema`: The protocol of the `host`. Default is `https`.
-* `host`: The host where the collected data will be sent. **(Required)**
-* `uninstall`: This will uninstall the agent.
-
-
-### Uninstalling the agent
-
-To uninstall the agent, use the `agent_setup.sh` script with the `--uninstall` flag:
-
-```
-sudo bash agent_setup.sh --uninstall
-```
-
-This script performs the following steps:
-
-1. **Removes the uptinio-agent systemd service**: It stops and disables the systemd service associated with the agent.
-
-2. **Deletes the configuration file**: The script removes the configuration file of the agent
-
-3. **Deletes the binary**: The script removes the agent binary from the system.
-
-

@@ -3,29 +3,14 @@ package main
 import (
 	"fmt"
 	"os"
-	"path/filepath"
-	"runtime"
 
 	"gopkg.in/yaml.v3"
 )
 
 var (
-	DefaultConfigPath = filepath.Join(getConfBaseDir(), "uptinio-agent.yaml")
-	ConfigPath        string
+	ConfigPath string
+	config     Config
 )
-
-// defaultConfig provides default values for the configuration
-var defaultConfig = Config{
-	MetricsPath:              filepath.Join(getMetricsBaseDir(), "uptinio-agent", "metrics.json"), // metrics file path
-	LogPath:                  filepath.Join(getLogBaseDir(), "uptinio-agent", "agent.log"),        // log path
-	MaxLogSizeMB:             10,                                                                  //max log fie size
-	Schema:                   "https",                                                             // request schema
-	Host:                     "beta.uptinio.com",                                                  // server host
-	CollectIntervalInSeconds: 60,                                                                  // Collect metrics interval in seconds
-	SendIntervalInSeconds:    60,                                                                  // Send metrics interval in seconds
-}
-
-var config Config
 
 // LoadConfig loads the configuration from a file
 func LoadConfig() Config {
@@ -50,78 +35,6 @@ func LoadConfig() Config {
 	}
 
 	return config
-}
-
-// saveConfigFile saves the configuration to a file
-func saveConfigFile(config Config) error {
-	// Create the directory if it doesn't exist
-	if err := os.MkdirAll(filepath.Dir(ConfigPath), 0755); err != nil {
-		return fmt.Errorf("error creating directory: %w", err)
-	}
-
-	file, err := os.Create(ConfigPath)
-	if err != nil {
-		return fmt.Errorf("error creating configuration file: %w", err)
-	}
-	defer file.Close()
-
-	encoder := yaml.NewEncoder(file)
-	if err := encoder.Encode(&config); err != nil {
-		return fmt.Errorf("error encoding configuration: %w", err)
-	}
-	fmt.Printf("Configuration saved to %s:\n", ConfigPath)
-	printConfig(config)
-	return nil
-}
-
-// get base path where configuration will be saved
-func getConfBaseDir() string {
-	switch runtime.GOOS {
-	case "windows":
-		// On Windows, the directory structure is:
-		// C:\Users\<USERNAME>\AppData\Local
-		// Example: C:\Users\JohnDoe\AppData\Local
-		return os.Getenv("LOCALAPPDATA")
-	case "darwin":
-		// On macOS, the directory structure is:
-		// /Users/<USERNAME>/Library/Application Support
-		// Example: /Users/JohnDoe/Library/Application Support
-		return filepath.Join(os.Getenv("HOME"), "Library", "Application Support")
-	default: // Linux or other systems
-		return "/etc"
-	}
-}
-
-func createConfiguration(
-	authToken string, schema string, host string,
-	collectIntervalSec int, sendIntervalSec int,
-	metricsPath string, logPath string, maxLogSizeMB int) error {
-	if authToken == "" {
-		return fmt.Errorf("parameter 'auth token' is mandatory")
-	}
-
-	if !isValidSchema(schema) {
-		return fmt.Errorf("the schema '%s' is invalid. It must be one of: %v\n", schema, VALID_SCHEMAS)
-	}
-
-	if hasSchema(host) {
-		return fmt.Errorf("the host '%s' must not include a schema (like 'http://' or 'https://').\n", host)
-	}
-
-	config := Config{
-		MetricsPath:              metricsPath,
-		LogPath:                  logPath,
-		MaxLogSizeMB:             maxLogSizeMB,
-		Schema:                   schema,
-		Host:                     host,
-		AuthToken:                authToken,
-		CollectIntervalInSeconds: collectIntervalSec,
-		SendIntervalInSeconds:    sendIntervalSec,
-	}
-
-	err := saveConfigFile(config)
-
-	return err
 }
 
 // printConfig prints the configuration in a readable YAML format

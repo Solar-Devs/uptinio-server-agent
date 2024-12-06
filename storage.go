@@ -6,26 +6,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"runtime"
 )
-
-// Function to get the base directory where the metrics file will be saved based on the operating system
-func getMetricsBaseDir() string {
-	switch runtime.GOOS {
-	case "windows":
-		// On Windows, the directory structure is:
-		// C:\Users\<USERNAME>\AppData\Local
-		// Example: C:\Users\JohnDoe\AppData\Local
-		return os.Getenv("LOCALAPPDATA")
-	case "darwin":
-		// On macOS, the directory structure is:
-		// /Users/<USERNAME>/Library/Application Support
-		// Example: /Users/JohnDoe/Library/Application Support
-		return filepath.Join(os.Getenv("HOME"), "Library", "Application Support")
-	default: // Linux or other systems
-		return "/var/tmp"
-	}
-}
 
 // Save metrics to file
 func saveMetricsToFile(newPayload Payload) error {
@@ -82,16 +63,4 @@ func loadMetricsFromFile() (Payload, error) {
 func clearMetricsFile() error {
 	filePath := config.MetricsPath // Get the full file path
 	return os.Remove(filePath)
-}
-
-// get base path where logs will be saved
-func getLogBaseDir() string {
-	switch runtime.GOOS {
-	case "windows":
-		return "C:\\ProgramData\\Uptinio-Agent\\logs"
-	case "darwin":
-		return "/usr/local/var/log"
-	default:
-		return "/var/log"
-	}
 }

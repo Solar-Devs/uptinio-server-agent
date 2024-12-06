@@ -1,5 +1,10 @@
 package main
 
+import (
+	"os"
+	"sync"
+)
+
 type Metric struct {
 	Metric    string  `json:"metric"`
 	Value     float64 `json:"value"`
@@ -22,4 +27,13 @@ type Config struct {
 	AuthToken                string `yaml:"auth_token"`
 	CollectIntervalInSeconds int    `yaml:"collect_interval_in_seconds"`
 	SendIntervalInSeconds    int    `yaml:"send_interval_in_seconds"`
+}
+
+// SizeLimitedLogWriter is a custom writer that ensures a log file remains within a specified size limit.
+type SizeLimitedLogWriter struct {
+	filePath   string     // Path to the log file
+	maxSize    int64      // Maximum file size in bytes
+	keepBytes  int64      // Number of recent bytes to retain when truncating
+	currentLog *os.File   // The current log file
+	mu         sync.Mutex // Mutex to ensure thread-safe operations
 }

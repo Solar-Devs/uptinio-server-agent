@@ -11,6 +11,12 @@ AUTH_TOKEN="" # validation token when sending collected data
 # Optional values
 HOST="beta.uptinio.com" # URL to send collected data
 SCHEMA=https
+COLLECT_INTERVAL=60
+SEND_INTERVAL=60
+METRICS_PATH=/var/tmp/uptinio-agent/metrics.json
+LOG_PATH=/var/log/uptinio-agent/agent.log
+MAX_LOG_SIZE=1024
+CONFIG_PATH=/etc/uptinio-agent.yaml
 UNINSTALL=false
 # Constants
 BINARY_URL=https://github.com/Solar-Devs/uptinio-server-agent/releases/latest/download/agent-linux-amd64
@@ -19,14 +25,20 @@ SERVICE_NAME=uptinio-agent.service
 SERVICE_FILE=/etc/systemd/system/$SERVICE_NAME
 
 # Parse arguments
-if [[ "$#" -eq 1 && "$1" != "--uninstall" ]]; then
+if [[ "$#" -eq 1 && "$1" != "--uninstall" ]]; then # only one argument... the its just auth token
     AUTH_TOKEN="$1"
-else
+else # multiple arguments you have to specify --argument value for each
     while [[ "$#" -gt 0 ]]; do
         case $1 in
             --auth-token) AUTH_TOKEN="$2"; shift ;;
             --host) HOST="$2"; shift ;;
             --schema) SCHEMA="$2"; shift ;;
+            --collect-interval-in-sec) COLLECT_INTERVAL="$2"; shift ;;
+            --send-interval-in-sec) SEND_INTERVAL="$2"; shift ;;
+            --metrics-path) METRICS_PATH="$2"; shift ;;
+            --log-path) LOG_PATH="$2"; shift ;;
+            --max-log-size-mb) MAX_LOG_SIZE="$2"; shift ;;
+            --config-path) CONFIG_PATH="$2"; shift ;;
             --uninstall) UNINSTALL=true ;;
             *) echo "Unknown parameter passed: $1"; exit 1 ;;
         esac
@@ -59,9 +71,16 @@ if [ "$UNINSTALL" == "true" ]; then
     systemctl daemon-reload
 
     # Remove configuration file
-    CONFIG_PATH=$("$AGENT_BINARY" --get-default-config-path)
     echo "Removing configuration file: $CONFIG_PATH"
     rm "$CONFIG_PATH"
+
+    # Remove metrics file
+    echo "Removing metrics file: $METRICS_PATH"
+    rm "$METRICS_PATH"
+
+    # Remove logs file
+    echo "Removing log file: $LOG_PATH"
+    rm "$LOG_PATH"
 
     # Remove the binary
     if [ -f "$AGENT_BINARY" ]; then
@@ -86,11 +105,17 @@ chmod +x "$AGENT_BINARY"
 echo "Binary installed at $AGENT_BINARY"
 
 # Run the binary to create the configuration file
-echo "Creating configuration using the binary..."
-"$AGENT_BINARY" --create-config \
-  --auth-token "$AUTH_TOKEN" \
-  --host "$HOST" \
-  --schema "$SCHEMA"
+echo "Creating configuration file: $CONFIG_PATH..."
+cat <<EOF > "$CONFIG_PATH"
+metrics_path: "$METRICS_PATH"
+log_path: "$LOG_PATH"
+max_log_file_size_in_MB: $MAX_LOG_SIZE
+schema: "$SCHEMA"
+host: "$HOST"
+auth_token: "$AUTH_TOKEN"
+collect_interval_in_seconds: $COLLECT_INTERVAL
+send_interval_in_seconds: $SEND_INTERVAL
+EOF
 
 # Create systemd service file
 echo "Creating systemd service file..."
@@ -100,7 +125,7 @@ Description=Uptinio Server Monitoring Agent
 After=network.target
 
 [Service]
-ExecStart=$AGENT_BINARY
+ExecStart=$AGENT_BINARY --config-path $CONFIG_PATH
 Restart=always
 User=$(whoami)
 
@@ -116,7 +141,3 @@ systemctl enable "$SERVICE_NAME"
 systemctl start "$SERVICE_NAME"
 
 echo "Installation complete. The agent is now running."
-
-
-
-# curl -fsSL https://your-server.com/install.sh | bash -s -- --auth-token "my-secret-token" --url "http://my-server.com/api/v1/server_metrics" --collect-interval-sec 10 --send-interval-sec 60

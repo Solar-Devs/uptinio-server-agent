@@ -6,17 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"sync"
 )
-
-// SizeLimitedLogWriter is a custom writer that ensures a log file remains within a specified size limit.
-type SizeLimitedLogWriter struct {
-	filePath   string     // Path to the log file
-	maxSize    int64      // Maximum file size in bytes
-	keepBytes  int64      // Number of recent bytes to retain when truncating
-	currentLog *os.File   // The current log file
-	mu         sync.Mutex // Mutex to ensure thread-safe operations
-}
 
 // NewSizeLimitedLogWriter creates a new instance of SizeLimitedLogWriter.
 // filePath: the log file path
