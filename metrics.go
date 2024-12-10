@@ -24,7 +24,7 @@ func collectMetrics() ([]Metric, []error) {
 	if err != nil {
 		errors = append(errors, fmt.Errorf("error getting CPU usage: %w", err))
 	} else {
-		metrics = append(metrics, Metric{Metric: "cpu_usage", Value: cpuUsage, Timestamp: now})
+		metrics = append(metrics, Metric{Metric: "cpu_used", Value: cpuUsage, Timestamp: now})
 	}
 
 	// Memory
@@ -42,7 +42,7 @@ func collectMetrics() ([]Metric, []error) {
 		errors = append(errors, fmt.Errorf("error getting disk stats: %w", err))
 	} else {
 		diskUsage := float64(diskStats.Used)
-		metrics = append(metrics, Metric{Metric: "disk_usage_bytes", Value: diskUsage, Timestamp: now})
+		metrics = append(metrics, Metric{Metric: "disk_used_bytes", Value: diskUsage, Timestamp: now})
 	}
 
 	// Network Metrics
