@@ -11,7 +11,7 @@ var Version = "unknown" // fill this value when compiling with a flag: -ldflags 
 
 func main() {
 	// available flags
-	getVersion := flag.Bool("get-version", false, "Get agent version")
+	getVersion := flag.Bool("version", false, "Get agent version")
 	flag.StringVar(&ConfigPath, "config-path", "", "Config file path, must be a yaml file")
 
 	flag.Parse()
