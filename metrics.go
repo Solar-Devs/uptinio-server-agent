@@ -33,7 +33,7 @@ func collectMetrics() ([]Metric, []error) {
 		errors = append(errors, fmt.Errorf("error getting memory stats: %w", err))
 	} else {
 		memoryUsage := float64(vmStats.Used)
-		metrics = append(metrics, Metric{Metric: "memory_used_bytes", Value: memoryUsage, Timestamp: now})
+		metrics = append(metrics, Metric{Metric: "mem_used_b", Value: memoryUsage, Timestamp: now})
 	}
 
 	// Disk Usage
@@ -42,7 +42,7 @@ func collectMetrics() ([]Metric, []error) {
 		errors = append(errors, fmt.Errorf("error getting disk stats: %w", err))
 	} else {
 		diskUsage := float64(diskStats.Used)
-		metrics = append(metrics, Metric{Metric: "disk_used_bytes", Value: diskUsage, Timestamp: now})
+		metrics = append(metrics, Metric{Metric: "disk_used_b", Value: diskUsage, Timestamp: now})
 	}
 
 	// Network Metrics
@@ -51,24 +51,24 @@ func collectMetrics() ([]Metric, []error) {
 		errors = append(errors, fmt.Errorf("error getting network stats: %w", err))
 	} else if len(netStats) > 0 {
 		metrics = append(metrics, Metric{
-			Metric:    "network_sent_bytes",
+			Metric:    "net_sent_b",
 			Value:     float64(netStats[0].BytesSent), // Total data sent in bytes since uptime
 			Timestamp: now,
 		})
 		metrics = append(metrics, Metric{
-			Metric:    "network_received_bytes",
+			Metric:    "net_recv_b",
 			Value:     float64(netStats[0].BytesRecv), // Total data received in bytes since uptime
 			Timestamp: now,
 		})
 
 		metrics = append(metrics, Metric{
-			Metric:    "network_pps_sent",
-			Value:     float64(netStats[0].PacketsSent), // Sent packages
+			Metric:    "pkt_sent",
+			Value:     float64(netStats[0].PacketsSent), // Sent packets since uptime
 			Timestamp: now,
 		})
 		metrics = append(metrics, Metric{
-			Metric:    "network_pps_received",
-			Value:     float64(netStats[0].PacketsRecv), // Received packages
+			Metric:    "pkt_recv",
+			Value:     float64(netStats[0].PacketsRecv), // Received packets since uptime
 			Timestamp: now,
 		})
 	}
