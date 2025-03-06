@@ -9,7 +9,7 @@ fi
 # Required values
 AUTH_TOKEN="" # validation token when sending collected data
 # Optional values
-HOST="beta.uptinio.com" # URL to send collected data
+HOST="app.uptinio.com" # URL to send collected data
 SCHEMA=https
 COLLECT_INTERVAL=60
 SEND_INTERVAL=60

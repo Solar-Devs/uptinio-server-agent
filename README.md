@@ -38,7 +38,7 @@ The parameters of `agent_setup.sh` are the following:
 
 * `auth-token`: The authorization token used for the request. **(Required)**
 * `schema`: The protocol of the `host`. Default is `https`.
-* `host`: The host where the collected data will be sent. Default is `beta.uptinio.com`
+* `host`: The host where the collected data will be sent. Default is `app.uptinio.com`
 * `collect-interval-sec`: The collection interval in seconds. Default is `60 seconds (1 minute)`
 * `send-interval-sec`: The send interval in seconds. Default is `60 seconds (1 minute)`
 * `metrics-path`: The path where json metrics are stored before being sent. The default directory is `/var/tmp/uptinio-agent/metrics.json`.
