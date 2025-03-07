@@ -78,8 +78,8 @@ func collectMetrics() ([]Metric, []error) {
 }
 
 func getAttributes() map[string]interface{} {
-	// Get the MAC address
-	macAddress, err := metric_functions.GetMacAddress()
+	// Get the motherboard ID
+	macAddress, err := metric_functions.GetMotherboardID()
 	if err != nil {
 		macAddress = "unknown" // Default if unable to retrieve the MAC address
 	}
@@ -134,7 +134,7 @@ func getAttributes() map[string]interface{} {
 		"public_ip":          publicIP,
 		"private_ip":         privateIP,
 		"hostname":           hostname,
-		"mac_address":        macAddress,
+		"motherboard_id":     motherboardID,
 		"cpu_cores":          runtime.NumCPU(),
 		"cpu_model":          cpuModel,
 		"operating_system":   operatingSystem,
