@@ -34,9 +34,13 @@ func sendMetrics(payload Payload) error {
     }
 
     authToken := strings.TrimSpace(config.AuthToken)
+    if authToken == "" {
+        return fmt.Errorf("authentication token not configured")
+    }
     
     log.Printf("DEBUG: Schema=%q, Host=%q", config.Schema, config.Host)
-    log.Printf("DEBUG: AuthToken=%q (len=%d)", authToken, len(authToken))
+    log.Printf("DEBUG: AuthToken length=%d (first 5 characters: %s...)", 
+               len(authToken), authToken[:min(5, len(authToken))])
     log.Printf("DEBUG: POST URL: %q", fullURL)
     log.Printf("DEBUG: Payload: %s", string(data))
     
@@ -58,4 +62,11 @@ func sendMetrics(payload Payload) error {
         return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
     }
     return nil
+}
+
+func min(a, b int) int {
+    if a < b {
+        return a
+    }
+    return b
 }
