@@ -1,3 +1,6 @@
+// This file is used to get the device ID of the server
+// It is used as a fallback if the motherboard ID is not found (for example in a VM)
+// It uses the machine-id, product_uuid or the combination of hostname and cpuinfo as motherboard_id
 package metric_functions
 
 import (

@@ -79,42 +79,59 @@ func collectMetrics() ([]Metric, []error) {
 }
 
 func getAttributes() map[string]interface{} {
+	// Get motherboard ID
 	motherboardID, err := metric_functions.GetMotherboardID()
 	if err != nil {
-		log.Printf("Error obteniendo motherboard ID: %v", err)
+		log.Printf("Error getting motherboard ID: %v", err)
 		motherboardID, err = metric_functions.GetFallbackDeviceID()
 		if err != nil {
-			log.Printf("Error obteniendo ID alternativo: %v", err)
+			log.Printf("Error getting alternative ID: %v", err)
 			motherboardID = "unknown"
 		}
 	}
 
+	// Get hostname
 	hostname, err := os.Hostname()
 	if err != nil {
 		hostname = "unknown"
 	}
 
+	// Get private IP
 	privateIP := metric_functions.GetPrivateIP()
+
+	// Get public IP
 	publicIP := metric_functions.GetPublicIP()
+
+	// Get CPU model
 	cpuInfo, err := cpu.Info()
 	cpuModel := "unknown"
 	if err == nil && len(cpuInfo) > 0 {
 		cpuModel = cpuInfo[0].ModelName
 	}
+
+	// Get operating system
 	operatingSystem := runtime.GOOS
+
+	// Get uptime
 	uptime, err := host.Uptime()
 	if err != nil {
 		uptime = 0
 	}
+
+	// Get kernel version
 	kernelVersion, err := host.KernelVersion()
 	if err != nil {
 		kernelVersion = "unknown"
 	}
+
+	// Get disk total bytes
 	diskStats, err := disk.Usage("/")
 	disk_total_bytes := uint64(0)
 	if err == nil {
 		disk_total_bytes = diskStats.Total
 	}
+
+	// Get memory total bytes
 	vmStats, err := mem.VirtualMemory()
 	memory_total_bytes := uint64(0)
 	if err == nil {

@@ -9,8 +9,8 @@ fi
 # Required values
 AUTH_TOKEN="" # validation token when sending collected data
 # Optional values
-HOST="localhost" # URL to send collected data
-SCHEMA=http
+HOST="app.uptinio.com" # URL to send collected data
+SCHEMA=https
 COLLECT_INTERVAL=60
 SEND_INTERVAL=60
 METRICS_PATH=/var/tmp/uptinio-agent/metrics.json
@@ -19,7 +19,7 @@ MAX_LOG_SIZE=1024
 CONFIG_PATH=/etc/uptinio-agent.yaml
 UNINSTALL=false
 # Constants
-# BINARY_URL=https://github.com/Solar-Devs/uptinio-server-agent/releases/latest/download/agent-linux-amd64
+BINARY_URL=https://github.com/Solar-Devs/uptinio-server-agent/releases/latest/download/agent-linux-amd64
 AGENT_BINARY=/usr/local/bin/uptinio-agent
 SERVICE_NAME=uptinio-agent.service
 SERVICE_FILE=/etc/systemd/system/$SERVICE_NAME
@@ -99,8 +99,8 @@ if [ -z "$AUTH_TOKEN" ]; then
 fi
 
 # Install agent binary
-echo "Installing agent binary..."
-cp ./agent-linux-amd64 "$AGENT_BINARY"
+echo "Downloading and installing agent binary..."
+curl -Lo "$AGENT_BINARY" "$BINARY_URL"
 chmod +x "$AGENT_BINARY"
 echo "Binary installed at $AGENT_BINARY"
 
@@ -140,6 +140,7 @@ echo "Enabling and starting systemd service..."
 systemctl enable "$SERVICE_NAME"
 systemctl start "$SERVICE_NAME"
 
+# Install dmidecode
 echo "Installing dmidecode..."
 if [ -x "$(command -v apt-get)" ]; then
     apt-get update && apt-get install -y dmidecode

@@ -8,6 +8,9 @@ import (
     "io/ioutil"
 )
 
+// GetMotherboardID returns the motherboard ID of the server
+// It uses dmidecode to get the motherboard ID
+// If dmidecode is not installed, it returns an error
 func GetMotherboardID() (string, error) {
     switch runtime.GOOS {
     case "linux":
@@ -43,8 +46,8 @@ func GetMotherboardID() (string, error) {
             }
         }
         
-        return "", fmt.Errorf("no se encontró motherboard ID después de varios intentos")
+        return "", fmt.Errorf("no motherboard ID found after several attempts")
     default:
-        return "", fmt.Errorf("sistema operativo no soportado: %s", runtime.GOOS)
+        return "", fmt.Errorf("unsupported operating system: %s", runtime.GOOS)
     }
 }
