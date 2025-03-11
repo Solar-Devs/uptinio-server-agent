@@ -10,30 +10,16 @@ import (
 func GetMotherboardID() (string, error) {
     switch runtime.GOOS {
     case "linux":
-        // dmidecode to get motherboard serial number in Linux
-        cmd := exec.Command("sudo", "dmidecode", "-s", "baseboard-serial-number")
-        output, err := cmd.Output()
+        out, err := exec.Command("sudo", "dmidecode", "-s", "baseboard-serial-number").Output()
         if err != nil {
-            return "", err
+            return "", fmt.Errorf("error obteniendo motherboard ID: %w", err)
         }
-        return strings.TrimSpace(string(output)), nil
-        
-    case "windows":
-        // wmic to get the motherboard serial number in Windows
-        cmd := exec.Command("wmic", "baseboard", "get", "serialnumber")
-        output, err := cmd.Output()
-        if err != nil {
-            return "", err
+        id := strings.TrimSpace(string(out))
+        if id == "" {
+            return "", fmt.Errorf("no se encontró motherboard ID")
         }
-        lines := strings.Split(string(output), "\n")
-        for _, line := range lines {
-            if line != "" && !strings.Contains(line, "SerialNumber") {
-                return strings.TrimSpace(line), nil
-            }
-        }
-        return "", fmt.Errorf("motherboard ID not found")
-        
+        return id, nil
     default:
-        return "", fmt.Errorf("unsupported operating system: %s", runtime.GOOS)
+        return "", fmt.Errorf("sistema operativo no soportado: %s", runtime.GOOS)
     }
 }

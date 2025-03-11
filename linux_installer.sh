@@ -9,8 +9,8 @@ fi
 # Required values
 AUTH_TOKEN="" # validation token when sending collected data
 # Optional values
-HOST="app.uptinio.com" # URL to send collected data
-SCHEMA=https
+HOST="localhost" # URL to send collected data
+SCHEMA=http
 COLLECT_INTERVAL=60
 SEND_INTERVAL=60
 METRICS_PATH=/var/tmp/uptinio-agent/metrics.json

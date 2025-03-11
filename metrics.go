@@ -78,69 +78,54 @@ func collectMetrics() ([]Metric, []error) {
 }
 
 func getAttributes() map[string]interface{} {
-	// Get the motherboard ID
-	macAddress, err := metric_functions.GetMotherboardID()
-	if err != nil {
-		macAddress = "unknown" // Default if unable to retrieve the MAC address
-	}
+    motherboardID, err := metric_functions.GetMotherboardID()
+    if err != nil {
+        motherboardID = "unknown"
+    }
 
-	// Get the hostname
-	hostname, err := os.Hostname()
-	if err != nil {
-		hostname = "unknown"
-	}
+    hostname, err := os.Hostname()
+    if err != nil {
+        hostname = "unknown"
+    }
 
-	// Get the private IP address
-	privateIP := metric_functions.GetPrivateIP()
+    privateIP := metric_functions.GetPrivateIP()
+    publicIP := metric_functions.GetPublicIP()
+    cpuInfo, err := cpu.Info()
+    cpuModel := "unknown"
+    if err == nil && len(cpuInfo) > 0 {
+        cpuModel = cpuInfo[0].ModelName
+    }
+    operatingSystem := runtime.GOOS
+    uptime, err := host.Uptime()
+    if err != nil {
+        uptime = 0
+    }
+    kernelVersion, err := host.KernelVersion()
+    if err != nil {
+        kernelVersion = "unknown"
+    }
+    diskStats, err := disk.Usage("/")
+    disk_total_bytes := uint64(0)
+    if err == nil {
+        disk_total_bytes = diskStats.Total
+    }
+    vmStats, err := mem.VirtualMemory()
+    memory_total_bytes := uint64(0)
+    if err == nil {
+        memory_total_bytes = vmStats.Total
+    }
 
-	// Get the public IP address
-	publicIP := metric_functions.GetPublicIP()
-
-	// Get the CPU model information
-	cpuInfo, err := cpu.Info()
-	cpuModel := "unknown"
-	if err == nil && len(cpuInfo) > 0 {
-		cpuModel = cpuInfo[0].ModelName
-	}
-
-	// Get the operating system
-	operatingSystem := runtime.GOOS
-
-	// Get the system uptime (seconds)
-	uptime, err := host.Uptime()
-	if err != nil {
-		uptime = 0
-	}
-
-	// Get the kernel version
-	kernelVersion, err := host.KernelVersion()
-	if err != nil {
-		kernelVersion = "unknown"
-	}
-
-	diskStats, err := disk.Usage("/")
-	disk_total_bytes := uint64(0)
-	if err == nil {
-		disk_total_bytes = diskStats.Total
-	}
-
-	vmStats, err := mem.VirtualMemory()
-	memory_total_bytes := uint64(0)
-	if err == nil {
-		memory_total_bytes = vmStats.Total
-	}
-
-	return map[string]interface{}{
-		"public_ip":          publicIP,
-		"private_ip":         privateIP,
-		"hostname":           hostname,
-		"motherboard_id":     motherboardID,
-		"cpu_cores":          runtime.NumCPU(),
-		"cpu_model":          cpuModel,
-		"operating_system":   operatingSystem,
-		"uptime":             int(uptime),
-		"kernel_version":     kernelVersion,
-		"disk_total_bytes":   disk_total_bytes,
-		"memory_total_bytes": memory_total_bytes,
-	}
+    return map[string]interface{}{
+        "public_ip":          publicIP,
+        "private_ip":         privateIP,
+        "hostname":           hostname,
+        "motherboard_id":     motherboardID,
+        "cpu_cores":          runtime.NumCPU(),
+        "cpu_model":          cpuModel,
+        "operating_system":   operatingSystem,
+        "uptime":             int(uptime),
+        "kernel_version":     kernelVersion,
+        "disk_total_bytes":   disk_total_bytes,
+        "memory_total_bytes": memory_total_bytes,
+    }
 }
