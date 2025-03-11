@@ -19,7 +19,7 @@ MAX_LOG_SIZE=1024
 CONFIG_PATH=/etc/uptinio-agent.yaml
 UNINSTALL=false
 # Constants
-BINARY_URL=https://github.com/Solar-Devs/uptinio-server-agent/releases/latest/download/agent-linux-amd64
+# BINARY_URL=https://github.com/Solar-Devs/uptinio-server-agent/releases/latest/download/agent-linux-amd64
 AGENT_BINARY=/usr/local/bin/uptinio-agent
 SERVICE_NAME=uptinio-agent.service
 SERVICE_FILE=/etc/systemd/system/$SERVICE_NAME
@@ -99,8 +99,8 @@ if [ -z "$AUTH_TOKEN" ]; then
 fi
 
 # Install agent binary
-echo "Downloading and installing agent binary..."
-curl -Lo "$AGENT_BINARY" "$BINARY_URL"
+echo "Installing agent binary..."
+cp ./agent-linux-amd64 "$AGENT_BINARY"
 chmod +x "$AGENT_BINARY"
 echo "Binary installed at $AGENT_BINARY"
 

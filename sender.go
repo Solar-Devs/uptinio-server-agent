@@ -24,6 +24,16 @@ func buildURL(schema, host, hostPath string) (string, error) {
 }
 
 func sendMetrics(payload Payload) error {
+    if _, ok := payload.Attributes["motherboard_id"]; !ok {
+        log.Printf("WARNING: motherboard_id not found in attributes")
+    } else {
+        log.Printf("DEBUG: motherboard_id found: %v", payload.Attributes["motherboard_id"])
+    }
+    
+    if _, ok := payload.Attributes["mac_address"]; ok {
+        log.Printf("ADVERTENCIA: mac_address still present in attributes")
+    }
+    
     data, err := json.Marshal(payload)
     if err != nil {
         return fmt.Errorf("error marshaling payload: %w", err)
