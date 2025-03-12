@@ -82,10 +82,10 @@ func getAttributes() map[string]interface{} {
 	// Get motherboard ID
 	motherboardID, err := metric_functions.GetMotherboardID()
 	if err != nil {
-		log.Printf("Error getting motherboard ID: %v", err)
+		log.Printf("Error obtaining motherboard ID: %v", err)
 		motherboardID, err = metric_functions.GetFallbackDeviceID()
 		if err != nil {
-			log.Printf("Error getting alternative ID: %v", err)
+			log.Printf("Error obtaining fallback device ID: %v", err)
 			motherboardID = "unknown"
 		}
 	}
@@ -96,7 +96,11 @@ func getAttributes() map[string]interface{} {
 		hostname = "unknown"
 	}
 
-	// Get private IP
+	macAddress, err := metric_functions.GetMacAddress()
+	if err != nil {
+		macAddress = "unknown"
+	}
+
 	privateIP := metric_functions.GetPrivateIP()
 
 	// Get public IP
@@ -126,20 +130,21 @@ func getAttributes() map[string]interface{} {
 
 	// Get disk total bytes
 	diskStats, err := disk.Usage("/")
-	disk_total_bytes := uint64(0)
+	diskTotalBytes := uint64(0)
 	if err == nil {
-		disk_total_bytes = diskStats.Total
+		diskTotalBytes = diskStats.Total
 	}
 
 	// Get memory total bytes
 	vmStats, err := mem.VirtualMemory()
-	memory_total_bytes := uint64(0)
+	memoryTotalBytes := uint64(0)
 	if err == nil {
-		memory_total_bytes = vmStats.Total
+		memoryTotalBytes = vmStats.Total
 	}
 
 	return map[string]interface{}{
 		"motherboard_id":     motherboardID,
+		"mac_address":        macAddress,
 		"public_ip":          publicIP,
 		"private_ip":         privateIP,
 		"hostname":           hostname,
@@ -148,7 +153,7 @@ func getAttributes() map[string]interface{} {
 		"operating_system":   operatingSystem,
 		"uptime":             int(uptime),
 		"kernel_version":     kernelVersion,
-		"disk_total_bytes":   disk_total_bytes,
-		"memory_total_bytes": memory_total_bytes,
+		"disk_total_bytes":   diskTotalBytes,
+		"memory_total_bytes": memoryTotalBytes,
 	}
 }
