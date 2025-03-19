@@ -140,4 +140,14 @@ echo "Enabling and starting systemd service..."
 systemctl enable "$SERVICE_NAME"
 systemctl start "$SERVICE_NAME"
 
+# Install dmidecode
+echo "Installing dmidecode..."
+if [ -x "$(command -v apt-get)" ]; then
+    apt-get update && apt-get install -y dmidecode
+elif [ -x "$(command -v yum)" ]; then
+    yum install -y dmidecode
+elif [ -x "$(command -v dnf)" ]; then
+    dnf install -y dmidecode
+fi
+
 echo "Installation complete. The agent is now running."

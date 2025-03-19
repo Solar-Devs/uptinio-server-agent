@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"runtime"
 	"time"
@@ -78,69 +79,81 @@ func collectMetrics() ([]Metric, []error) {
 }
 
 func getAttributes() map[string]interface{} {
-	// Get the MAC address
-	macAddress, err := metric_functions.GetMacAddress()
+	// Get motherboard ID
+	motherboardID, err := metric_functions.GetMotherboardID()
 	if err != nil {
-		macAddress = "unknown" // Default if unable to retrieve the MAC address
+		log.Printf("Error obtaining motherboard ID: %v", err)
+		motherboardID, err = metric_functions.GetFallbackDeviceID()
+		if err != nil {
+			log.Printf("Error obtaining fallback device ID: %v", err)
+			motherboardID = "unknown"
+		}
 	}
 
-	// Get the hostname
+	// Get hostname
 	hostname, err := os.Hostname()
 	if err != nil {
 		hostname = "unknown"
 	}
 
-	// Get the private IP address
+	macAddress, err := metric_functions.GetMacAddress()
+	if err != nil {
+		macAddress = "unknown"
+	}
+
 	privateIP := metric_functions.GetPrivateIP()
 
-	// Get the public IP address
+	// Get public IP
 	publicIP := metric_functions.GetPublicIP()
 
-	// Get the CPU model information
+	// Get CPU model
 	cpuInfo, err := cpu.Info()
 	cpuModel := "unknown"
 	if err == nil && len(cpuInfo) > 0 {
 		cpuModel = cpuInfo[0].ModelName
 	}
 
-	// Get the operating system
+	// Get operating system
 	operatingSystem := runtime.GOOS
 
-	// Get the system uptime (seconds)
+	// Get uptime
 	uptime, err := host.Uptime()
 	if err != nil {
 		uptime = 0
 	}
 
-	// Get the kernel version
+	// Get kernel version
 	kernelVersion, err := host.KernelVersion()
 	if err != nil {
 		kernelVersion = "unknown"
 	}
 
+	// Get disk total bytes
 	diskStats, err := disk.Usage("/")
-	disk_total_bytes := uint64(0)
+	diskTotalBytes := uint64(0)
 	if err == nil {
-		disk_total_bytes = diskStats.Total
+		diskTotalBytes = diskStats.Total
 	}
 
+	// Get memory total bytes
 	vmStats, err := mem.VirtualMemory()
-	memory_total_bytes := uint64(0)
+	memoryTotalBytes := uint64(0)
 	if err == nil {
-		memory_total_bytes = vmStats.Total
+		memoryTotalBytes = vmStats.Total
 	}
 
 	return map[string]interface{}{
+		"motherboard_id":     motherboardID,
+		"mac_address":        macAddress,
 		"public_ip":          publicIP,
 		"private_ip":         privateIP,
 		"hostname":           hostname,
-		"mac_address":        macAddress,
 		"cpu_cores":          runtime.NumCPU(),
 		"cpu_model":          cpuModel,
 		"operating_system":   operatingSystem,
 		"uptime":             int(uptime),
 		"kernel_version":     kernelVersion,
-		"disk_total_bytes":   disk_total_bytes,
-		"memory_total_bytes": memory_total_bytes,
+		"disk_total_bytes":   diskTotalBytes,
+		"memory_total_bytes": memoryTotalBytes,
 	}
 }

@@ -3,23 +3,28 @@ package metric_functions
 import (
 	"fmt"
 	"net"
+	"runtime"
+	"strings"
 )
 
-// Function to get the MAC address dynamically
 func GetMacAddress() (string, error) {
-	interfaces, err := net.Interfaces()
-	if err != nil {
-		return "", fmt.Errorf("could not get network interfaces: %w", err)
-	}
-
-	// Loop through the interfaces to find the first non-loopback one with a valid MAC address
-	for _, iface := range interfaces {
-		if iface.HardwareAddr.String() != "" && iface.Flags&net.FlagUp != 0 {
-			// Return the first found MAC address
-			return iface.HardwareAddr.String(), nil
+	switch runtime.GOOS {
+	case "linux", "darwin", "windows":
+		interfaces, err := net.Interfaces()
+		if err != nil {
+			return "", fmt.Errorf("could not get network interfaces: %w", err)
 		}
+		for _, iface := range interfaces {
+			if iface.Flags&net.FlagUp == 0 || iface.Flags&net.FlagLoopback != 0 {
+				continue
+			}
+			mac := strings.TrimSpace(iface.HardwareAddr.String())
+			if mac != "" {
+				return mac, nil
+			}
+		}
+		return "", fmt.Errorf("no valid MAC address found")
+	default:
+		return "", fmt.Errorf("unsupported operating system: %s", runtime.GOOS)
 	}
-
-	// Return an error if no valid MAC address is found
-	return "", fmt.Errorf("no MAC address found")
 }
