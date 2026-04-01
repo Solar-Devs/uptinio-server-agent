@@ -25,7 +25,10 @@ jobs:
           go-version: '1.23.3'
 
       # 3. Compile binaries with version
+      # CGO_ENABLED=0: static Linux binary, no glibc version tied to the CI image (works on older distros).
       - name: Build binaries
+        env:
+          CGO_ENABLED: "0"
         run: |
           VERSION=${{ github.ref_name }} # Obtains tag name (vX.Y.Z)
           echo "Building with version: $VERSION"
