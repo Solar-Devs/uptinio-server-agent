@@ -3,6 +3,7 @@ name: Create Release
 on:
   push:
     tags:
+      - main
       - '*'  # Execute when create a tag
 
 permissions:
