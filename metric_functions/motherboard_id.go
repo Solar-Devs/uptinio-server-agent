@@ -14,14 +14,14 @@ import (
 func GetMotherboardID() (string, error) {
 	switch runtime.GOOS {
 	case "linux":
-		out, err := exec.Command("sudo", "dmidecode", "-s", "baseboard-serial-number").Output()
+		out, err := exec.Command("dmidecode", "-s", "baseboard-serial-number").Output()
 		if err == nil {
 			id := strings.TrimSpace(string(out))
 			if id != "" && id != "Not Specified" && id != "Unknown" {
 				return id, nil
 			}
 		}
-		out, err = exec.Command("sudo", "dmidecode", "-s", "system-uuid").Output()
+		out, err = exec.Command("dmidecode", "-s", "system-uuid").Output()
 		if err == nil {
 			id := strings.TrimSpace(string(out))
 			if id != "" && id != "Not Specified" && id != "Unknown" {

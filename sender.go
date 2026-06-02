@@ -14,6 +14,8 @@ import (
 
 const HOST_PATH = "api/v1/server_metrics"
 
+var metricsHTTPClient = &http.Client{Timeout: 10 * time.Second}
+
 func buildURL(schema, host, hostPath string) (string, error) {
 	u := &url.URL{
 		Scheme: schema,
@@ -24,6 +26,10 @@ func buildURL(schema, host, hostPath string) (string, error) {
 }
 
 func sendMetrics(payload Payload) error {
+	return sendMetricsAttempt(payload, false)
+}
+
+func sendMetricsAttempt(payload Payload, retried bool) error {
 	if _, ok := payload.Attributes["motherboard_id"]; !ok {
 		log.Printf("WARNING: motherboard_id not found in attributes")
 	} else {
@@ -52,7 +58,7 @@ func sendMetrics(payload Payload) error {
 	log.Printf("DEBUG: AuthToken length=%d (first 5 characters: %s...)",
 		len(authToken), authToken[:min(5, len(authToken))])
 	log.Printf("DEBUG: POST URL: %q", fullURL)
-	log.Printf("DEBUG: Payload: %s", string(data))
+	log.Printf("DEBUG: Payload size: %d bytes, metrics count: %d", len(data), len(payload.Metrics))
 
 	req, err := http.NewRequest("POST", fullURL, bytes.NewBuffer(data))
 	if err != nil {
@@ -61,12 +67,17 @@ func sendMetrics(payload Payload) error {
 	req.Header.Set("Authorization", authToken)
 	req.Header.Set("Content-Type", "application/json")
 
-	client := &http.Client{Timeout: 10 * time.Second}
-	resp, err := client.Do(req)
+	resp, err := metricsHTTPClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("error sending request: %w", err)
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusRequestEntityTooLarge && !retried && len(payload.Metrics) > 6 {
+		log.Printf("Payload too large (%d bytes); retrying with latest metrics only", len(data))
+		payload.Metrics = payload.Metrics[len(payload.Metrics)-6:]
+		return sendMetricsAttempt(payload, true)
+	}
 
 	if resp.StatusCode != http.StatusCreated {
 		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
