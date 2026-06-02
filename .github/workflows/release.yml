@@ -36,12 +36,24 @@ jobs:
           GOOS=windows GOARCH=amd64 go build -ldflags "-X main.Version=$VERSION" -o agent-windows-amd64.exe .
           GOOS=darwin GOARCH=amd64 go build -ldflags "-X main.Version=$VERSION" -o agent-darwin-amd64 .
 
+      # musl build for Alpine Linux (glibc binary does not run on musl).
+      - name: Build Linux musl binary
+        run: |
+          VERSION=${{ github.ref_name }}
+          docker run --rm \
+            -v "${{ github.workspace }}:/src" \
+            -w /src \
+            -e CGO_ENABLED=0 \
+            golang:1.23-alpine \
+            go build -ldflags "-X main.Version=$VERSION" -o agent-linux-musl-amd64 .
+
       # 4. Create release
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           files: |
             agent-linux-amd64
+            agent-linux-musl-amd64
             agent-windows-amd64.exe
             agent-darwin-amd64
         env:

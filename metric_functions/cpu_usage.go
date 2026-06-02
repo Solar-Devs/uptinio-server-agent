@@ -7,6 +7,9 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"time"
+
+	"github.com/shirou/gopsutil/cpu"
 )
 
 // Gets CPU usage like AWS: 1024 units = 1 core usage.
@@ -16,10 +19,12 @@ func GetCPUUsageAWSUnits() (float64, error) {
 		return 0, err
 	}
 
-	totalCPUs := runtime.NumCPU()
+	return ComputeAWSCPUUnits(cpuUsagePercent, runtime.NumCPU()), nil
+}
 
-	awsCPUUnits := math.Round((cpuUsagePercent * float64(totalCPUs) * 1024) / 100)
-	return awsCPUUnits, nil
+// ComputeAWSCPUUnits converts usage percent to AWS-style CPU units (1024 = one core at 100%).
+func ComputeAWSCPUUnits(usagePercent float64, numCPU int) float64 {
+	return math.Round((usagePercent * float64(numCPU) * 1024) / 100)
 }
 
 func GetCPUUsage() (float64, error) {
@@ -35,23 +40,16 @@ func GetCPUUsage() (float64, error) {
 	}
 }
 
-// Linux: Uses top or mpstat
+// Linux: reads /proc/stat via gopsutil (avoids brittle top output formats).
 func getCPUUsageLinux() (float64, error) {
-	cmd := exec.Command("sh", "-c", "top -bn1 | grep 'Cpu(s)'")
-	output, err := cmd.Output()
+	percentages, err := cpu.Percent(200*time.Millisecond, false)
 	if err != nil {
 		return 0, err
 	}
-	fields := strings.Fields(string(output))
-	if len(fields) > 7 {
-		idleStr := strings.TrimSuffix(fields[7], "%")
-		idle, err := strconv.ParseFloat(idleStr, 64)
-		if err != nil {
-			return 0, err
-		}
-		return 100.0 - idle, nil
+	if len(percentages) == 0 {
+		return 0, fmt.Errorf("no CPU usage data")
 	}
-	return 0, fmt.Errorf("could not parse top output")
+	return percentages[0], nil
 }
 
 // MacOS: Uses iostat

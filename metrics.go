@@ -89,6 +89,7 @@ func getAttributes() map[string]interface{} {
 			motherboardID = "unknown"
 		}
 	}
+	motherboardID = metric_functions.SanitizeDeviceID(motherboardID)
 
 	// Get hostname
 	hostname, err := os.Hostname()

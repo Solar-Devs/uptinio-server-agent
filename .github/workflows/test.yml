@@ -1,0 +1,71 @@
+name: Test
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  unit:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+
+      - name: Run tests
+        run: go test ./... -count=1 -race -v
+
+  linux-distros:
+    name: Linux (${{ matrix.distro }})
+    runs-on: ubuntu-latest
+    needs: unit
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - distro: debian
+            image: debian:12
+          - distro: ubuntu
+            image: ubuntu:24.04
+          - distro: centos
+            image: quay.io/centos/centos:stream9
+          - distro: fedora
+            image: fedora:41
+          - distro: alpine
+            image: alpine:3.20
+          - distro: arch
+            image: archlinux:latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Go tests in container
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}:/src" \
+            -w /src \
+            -e GOCACHE=/tmp/gocache \
+            -e GOMODCACHE=/tmp/gomodcache \
+            ${{ matrix.image }} \
+            sh /src/scripts/ci-test-linux.sh
+
+      - name: Run installer smoke test in container
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}:/src" \
+            -w /src \
+            -e GOCACHE=/tmp/gocache \
+            -e GOMODCACHE=/tmp/gomodcache \
+            ${{ matrix.image }} \
+            sh /src/scripts/ci-test-installer.sh
+
+  installer-syntax:
+    name: Installer shellcheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate installer syntax
+        run: bash -n linux_installer.sh

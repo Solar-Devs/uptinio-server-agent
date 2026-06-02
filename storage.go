@@ -8,6 +8,9 @@ import (
 	"path/filepath"
 )
 
+// Limits growth when sends fail (e.g. HTTP 413), keeping roughly one hour at 60s intervals.
+const maxStoredMetrics = 360
+
 // Save metrics to file
 func saveMetricsToFile(newPayload Payload) error {
 	filePath := config.MetricsPath
@@ -21,6 +24,9 @@ func saveMetricsToFile(newPayload Payload) error {
 
 	// Combine existing metrics with the new ones
 	existingPayload.Metrics = append(existingPayload.Metrics, newPayload.Metrics...)
+	if len(existingPayload.Metrics) > maxStoredMetrics {
+		existingPayload.Metrics = existingPayload.Metrics[len(existingPayload.Metrics)-maxStoredMetrics:]
+	}
 	existingPayload.Attributes = newPayload.Attributes
 	existingPayload.Version = newPayload.Version
 
