@@ -22,6 +22,17 @@ LOG_PATH=/var/log/uptinio-agent/agent.log
 MAX_LOG_SIZE=1024
 CONFIG_PATH=/etc/uptinio-agent.yaml
 UNINSTALL=false
+IS_UPDATE=false
+# Track which options were set on the CLI (so updates can preserve existing config).
+AUTH_TOKEN_SET=false
+HOST_SET=false
+SCHEMA_SET=false
+COLLECT_INTERVAL_SET=false
+SEND_INTERVAL_SET=false
+METRICS_PATH_SET=false
+LOG_PATH_SET=false
+MAX_LOG_SIZE_SET=false
+CONFIG_PATH_SET=false
 # Set LOCAL_AGENT_BINARY to a local file path to skip downloading (used in CI).
 LOCAL_AGENT_BINARY="${LOCAL_AGENT_BINARY:-}"
 
@@ -35,6 +46,7 @@ INITD_SERVICE_NAME=uptinio-agent
 INITD_SCRIPT=/etc/init.d/$INITD_SERVICE_NAME
 OPENRC_SCRIPT=/etc/init.d/$INITD_SERVICE_NAME
 PID_FILE=/var/run/uptinio-agent.pid
+SERVICE_MANAGER_FILE=/etc/uptinio-agent.service-manager
 
 detect_distro_family() {
   if [ -f /etc/debian_version ]; then
@@ -274,6 +286,7 @@ EOF
     echo "Warning: could not enable boot startup (update-rc.d/chkconfig/rc-update not found)."
   fi
 
+  # Update path already stopped the agent; always start the new binary.
   run_initd start
 }
 
@@ -297,7 +310,13 @@ EOF
 
   systemctl daemon-reload
   systemctl enable "$SYSTEMD_SERVICE_NAME"
-  systemctl start "$SYSTEMD_SERVICE_NAME"
+  # On update we already stopped the agent; start loads the new binary.
+  # restart is used as a fallback if the unit was still active.
+  if [ "$IS_UPDATE" = true ]; then
+    systemctl start "$SYSTEMD_SERVICE_NAME" 2>/dev/null || systemctl restart "$SYSTEMD_SERVICE_NAME"
+  else
+    systemctl start "$SYSTEMD_SERVICE_NAME"
+  fi
 }
 
 install_service() {
@@ -305,14 +324,70 @@ install_service() {
 
   if has_systemctl; then
     install_systemd_service
-    echo "service-manager=systemd" > /etc/uptinio-agent.service-manager
+    echo "systemd" > "$SERVICE_MANAGER_FILE"
   elif has_openrc; then
     install_openrc_service
-    echo "service-manager=openrc" > /etc/uptinio-agent.service-manager
+    echo "openrc" > "$SERVICE_MANAGER_FILE"
   else
     install_sysv_service
-    echo "service-manager=sysv" > /etc/uptinio-agent.service-manager
+    echo "sysv" > "$SERVICE_MANAGER_FILE"
   fi
+}
+
+# Normalize marker file contents (legacy files used "service-manager=systemd").
+read_service_manager() {
+  local manager=""
+  if [ -f "$SERVICE_MANAGER_FILE" ]; then
+    manager=$(tr -d '[:space:]' < "$SERVICE_MANAGER_FILE" 2>/dev/null || true)
+    manager=${manager#service-manager=}
+  fi
+  printf '%s' "$manager"
+}
+
+agent_is_installed() {
+  [ -x "$AGENT_BINARY" ] || [ -f "$CONFIG_PATH" ] || [ -f "$SERVICE_MANAGER_FILE" ] \
+    || [ -f "$SYSTEMD_SERVICE_FILE" ] || [ -f "$INITD_SCRIPT" ]
+}
+
+# Read a top-level YAML scalar from the agent config (simple key: value lines).
+load_config_value() {
+  local key=$1
+  local line value
+  [ -f "$CONFIG_PATH" ] || return 0
+  line=$(grep -E "^${key}:" "$CONFIG_PATH" | head -n 1 || true)
+  [ -n "$line" ] || return 0
+  value=${line#*:}
+  value=${value#"${value%%[![:space:]]*}"}
+  value=${value%"${value##*[![:space:]]}"}
+  value=${value#\"}
+  value=${value%\"}
+  value=${value#\'}
+  value=${value%\'}
+  printf '%s' "$value"
+}
+
+stop_running_agent() {
+  local manager
+  manager=$(read_service_manager)
+
+  echo "Stopping existing agent before update..."
+  case "$manager" in
+    systemd)
+      systemctl stop "$SYSTEMD_SERVICE_NAME" 2>/dev/null || true
+      ;;
+    openrc|sysv)
+      run_initd stop 2>/dev/null || true
+      ;;
+    *)
+      if has_systemctl; then
+        systemctl stop "$SYSTEMD_SERVICE_NAME" 2>/dev/null || true
+      fi
+      if [ -f "$INITD_SCRIPT" ]; then
+        run_initd stop 2>/dev/null || true
+      fi
+      ;;
+  esac
+  stop_agent_process
 }
 
 remove_systemd_service() {
@@ -359,10 +434,8 @@ stop_agent_process() {
 }
 
 remove_service() {
-  local manager=""
-  if [ -f /etc/uptinio-agent.service-manager ]; then
-    manager=$(cat /etc/uptinio-agent.service-manager 2>/dev/null || true)
-  fi
+  local manager
+  manager=$(read_service_manager)
 
   case "$manager" in
     systemd) remove_systemd_service ;;
@@ -375,24 +448,25 @@ remove_service() {
       ;;
   esac
   stop_agent_process
-  rm -f /etc/uptinio-agent.service-manager
+  rm -f "$SERVICE_MANAGER_FILE"
 }
 
 # Parse arguments
 if [[ "$#" -eq 1 && "$1" != "--uninstall" ]]; then
   AUTH_TOKEN="$1"
+  AUTH_TOKEN_SET=true
 else
   while [[ "$#" -gt 0 ]]; do
     case $1 in
-      --auth-token) AUTH_TOKEN="$2"; shift ;;
-      --host) HOST="$2"; shift ;;
-      --schema) SCHEMA="$2"; shift ;;
-      --collect-interval-in-sec) COLLECT_INTERVAL="$2"; shift ;;
-      --send-interval-in-sec) SEND_INTERVAL="$2"; shift ;;
-      --metrics-path) METRICS_PATH="$2"; shift ;;
-      --log-path) LOG_PATH="$2"; shift ;;
-      --max-log-size-mb) MAX_LOG_SIZE="$2"; shift ;;
-      --config-path) CONFIG_PATH="$2"; shift ;;
+      --auth-token) AUTH_TOKEN="$2"; AUTH_TOKEN_SET=true; shift ;;
+      --host) HOST="$2"; HOST_SET=true; shift ;;
+      --schema) SCHEMA="$2"; SCHEMA_SET=true; shift ;;
+      --collect-interval-in-sec) COLLECT_INTERVAL="$2"; COLLECT_INTERVAL_SET=true; shift ;;
+      --send-interval-in-sec) SEND_INTERVAL="$2"; SEND_INTERVAL_SET=true; shift ;;
+      --metrics-path) METRICS_PATH="$2"; METRICS_PATH_SET=true; shift ;;
+      --log-path) LOG_PATH="$2"; LOG_PATH_SET=true; shift ;;
+      --max-log-size-mb) MAX_LOG_SIZE="$2"; MAX_LOG_SIZE_SET=true; shift ;;
+      --config-path) CONFIG_PATH="$2"; CONFIG_PATH_SET=true; shift ;;
       --uninstall) UNINSTALL=true ;;
       *) echo "Unknown parameter passed: $1"; exit 1 ;;
     esac
@@ -422,18 +496,68 @@ if [ "$UNINSTALL" = "true" ]; then
   exit 0
 fi
 
+if agent_is_installed; then
+  IS_UPDATE=true
+  echo "Existing uptinio-agent installation detected; updating..."
+
+  # Preserve config values that were not overridden on the CLI.
+  if [ "$AUTH_TOKEN_SET" = false ]; then
+    AUTH_TOKEN=$(load_config_value auth_token)
+  fi
+  if [ "$HOST_SET" = false ]; then
+    value=$(load_config_value host)
+    [ -n "$value" ] && HOST="$value"
+  fi
+  if [ "$SCHEMA_SET" = false ]; then
+    value=$(load_config_value schema)
+    [ -n "$value" ] && SCHEMA="$value"
+  fi
+  if [ "$COLLECT_INTERVAL_SET" = false ]; then
+    value=$(load_config_value collect_interval_in_seconds)
+    [ -n "$value" ] && COLLECT_INTERVAL="$value"
+  fi
+  if [ "$SEND_INTERVAL_SET" = false ]; then
+    value=$(load_config_value send_interval_in_seconds)
+    [ -n "$value" ] && SEND_INTERVAL="$value"
+  fi
+  if [ "$METRICS_PATH_SET" = false ]; then
+    value=$(load_config_value metrics_path)
+    [ -n "$value" ] && METRICS_PATH="$value"
+  fi
+  if [ "$LOG_PATH_SET" = false ]; then
+    value=$(load_config_value log_path)
+    [ -n "$value" ] && LOG_PATH="$value"
+  fi
+  if [ "$MAX_LOG_SIZE_SET" = false ]; then
+    value=$(load_config_value max_log_file_size_in_MB)
+    [ -n "$value" ] && MAX_LOG_SIZE="$value"
+  fi
+fi
+
 if [ -z "$AUTH_TOKEN" ]; then
-  echo "Error: --auth-token is required."
+  if [ "$IS_UPDATE" = true ]; then
+    echo "Error: --auth-token is required (or keep an existing auth_token in $CONFIG_PATH)."
+  else
+    echo "Error: --auth-token is required."
+  fi
   exit 1
 fi
 
 DISTRO_FAMILY=$(detect_distro_family)
 echo "Detected distro family: $DISTRO_FAMILY"
 
+if [ "$IS_UPDATE" = true ]; then
+  stop_running_agent
+fi
+
 download_agent_binary
 echo "Binary installed at $AGENT_BINARY"
 
-echo "Creating configuration file: $CONFIG_PATH..."
+if [ "$IS_UPDATE" = true ]; then
+  echo "Updating configuration file: $CONFIG_PATH..."
+else
+  echo "Creating configuration file: $CONFIG_PATH..."
+fi
 cat <<EOF >"$CONFIG_PATH"
 metrics_path: "$METRICS_PATH"
 log_path: "$LOG_PATH"
@@ -448,17 +572,20 @@ EOF
 install_service
 install_dmidecode
 
-case "$(cat /etc/uptinio-agent.service-manager 2>/dev/null || echo unknown)" in
+ACTION_LABEL="Installation"
+[ "$IS_UPDATE" = true ] && ACTION_LABEL="Update"
+
+case "$(read_service_manager)" in
   systemd)
-    echo "Installation complete. The agent is running (systemd: $SYSTEMD_SERVICE_NAME)."
+    echo "$ACTION_LABEL complete. The agent is running (systemd: $SYSTEMD_SERVICE_NAME)."
     ;;
   openrc)
-    echo "Installation complete. The agent is running (OpenRC: rc-service $INITD_SERVICE_NAME status)."
+    echo "$ACTION_LABEL complete. The agent is running (OpenRC: rc-service $INITD_SERVICE_NAME status)."
     ;;
   sysv)
-    echo "Installation complete. The agent is running (SysV: service $INITD_SERVICE_NAME status)."
+    echo "$ACTION_LABEL complete. The agent is running (SysV: service $INITD_SERVICE_NAME status)."
     ;;
   *)
-    echo "Installation complete."
+    echo "$ACTION_LABEL complete."
     ;;
 esac

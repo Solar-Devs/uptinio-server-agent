@@ -73,9 +73,13 @@ func sendMetricsAttempt(payload Payload, retried bool) error {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode == http.StatusRequestEntityTooLarge && !retried && len(payload.Metrics) > 6 {
+	if resp.StatusCode == http.StatusRequestEntityTooLarge && !retried {
+		trimmed := metricsWithLatestTimestamp(payload.Metrics)
+		if len(trimmed) == 0 || len(trimmed) == len(payload.Metrics) {
+			return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+		}
 		log.Printf("Payload too large (%d bytes); retrying with latest metrics only", len(data))
-		payload.Metrics = payload.Metrics[len(payload.Metrics)-6:]
+		payload.Metrics = trimmed
 		return sendMetricsAttempt(payload, true)
 	}
 
@@ -83,6 +87,26 @@ func sendMetricsAttempt(payload Payload, retried bool) error {
 		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 	return nil
+}
+
+// metricsWithLatestTimestamp keeps only metrics from the newest collect sample.
+func metricsWithLatestTimestamp(metrics []Metric) []Metric {
+	if len(metrics) == 0 {
+		return metrics
+	}
+	latest := metrics[0].Timestamp
+	for _, m := range metrics[1:] {
+		if m.Timestamp > latest {
+			latest = m.Timestamp
+		}
+	}
+	trimmed := make([]Metric, 0, len(metrics))
+	for _, m := range metrics {
+		if m.Timestamp == latest {
+			trimmed = append(trimmed, m)
+		}
+	}
+	return trimmed
 }
 
 func min(a, b int) int {

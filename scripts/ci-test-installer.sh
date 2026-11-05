@@ -82,6 +82,25 @@ else
 	exit 1
 fi
 
+echo "Running update (re-install over existing)..."
+# No auth-token: update should reuse the existing config token/host.
+bash /src/linux_installer.sh
+
+test -x /usr/local/bin/uptinio-agent
+grep -q 'auth_token: "ci-test-token"' /etc/uptinio-agent.yaml
+grep -q 'host: "127.0.0.1"' /etc/uptinio-agent.yaml
+
+sleep 3
+if pgrep -x uptinio-agent >/dev/null 2>&1; then
+	echo "Agent process is running after update."
+elif command -v rc-service >/dev/null 2>&1 && rc-service uptinio-agent status 2>/dev/null | grep -Eq 'started|running'; then
+	echo "Agent service is started after update (OpenRC)."
+else
+	echo "Error: uptinio-agent not running after update." >&2
+	rc-service uptinio-agent status 2>&1 || true
+	exit 1
+fi
+
 echo "Running uninstall..."
 bash /src/linux_installer.sh --uninstall
 

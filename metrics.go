@@ -11,6 +11,7 @@ import (
 	"github.com/shirou/gopsutil/cpu"
 	"github.com/shirou/gopsutil/disk"
 	"github.com/shirou/gopsutil/host"
+	"github.com/shirou/gopsutil/load"
 	"github.com/shirou/gopsutil/mem"
 	"github.com/shirou/gopsutil/net"
 )
@@ -33,8 +34,16 @@ func collectMetrics() ([]Metric, []error) {
 	if err != nil {
 		errors = append(errors, fmt.Errorf("error getting memory stats: %w", err))
 	} else {
-		memoryUsage := float64(vmStats.Used)
-		metrics = append(metrics, Metric{Metric: "mem_used_b", Value: memoryUsage, Timestamp: now})
+		metrics = append(metrics, Metric{Metric: "mem_used_b", Value: float64(vmStats.Used), Timestamp: now})
+		metrics = append(metrics, Metric{Metric: "mem_avail_b", Value: float64(vmStats.Available), Timestamp: now})
+	}
+
+	// Swap
+	swapStats, err := mem.SwapMemory()
+	if err != nil {
+		errors = append(errors, fmt.Errorf("error getting swap stats: %w", err))
+	} else {
+		metrics = append(metrics, Metric{Metric: "swap_used_b", Value: float64(swapStats.Used), Timestamp: now})
 	}
 
 	// Disk Usage
@@ -42,8 +51,18 @@ func collectMetrics() ([]Metric, []error) {
 	if err != nil {
 		errors = append(errors, fmt.Errorf("error getting disk stats: %w", err))
 	} else {
-		diskUsage := float64(diskStats.Used)
-		metrics = append(metrics, Metric{Metric: "disk_used_b", Value: diskUsage, Timestamp: now})
+		metrics = append(metrics, Metric{Metric: "disk_used_b", Value: float64(diskStats.Used), Timestamp: now})
+		metrics = append(metrics, Metric{Metric: "disk_avail_b", Value: float64(diskStats.Free), Timestamp: now})
+	}
+
+	// Load averages
+	loadAvg, err := load.Avg()
+	if err != nil {
+		errors = append(errors, fmt.Errorf("error getting load averages: %w", err))
+	} else {
+		metrics = append(metrics, Metric{Metric: "load_1", Value: loadAvg.Load1, Timestamp: now})
+		metrics = append(metrics, Metric{Metric: "load_5", Value: loadAvg.Load5, Timestamp: now})
+		metrics = append(metrics, Metric{Metric: "load_15", Value: loadAvg.Load15, Timestamp: now})
 	}
 
 	// Network Metrics

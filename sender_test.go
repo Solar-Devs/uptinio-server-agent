@@ -58,6 +58,7 @@ func TestSendMetrics_RetriesOn413WithLatestMetrics(t *testing.T) {
 		body, _ := io.ReadAll(r.Body)
 		assert.NotContains(t, string(body), `"metric":"old"`)
 		assert.Contains(t, string(body), `"metric":"new"`)
+		assert.Contains(t, string(body), `"timestamp":"2026-01-01T00:01:00Z"`)
 		w.WriteHeader(http.StatusCreated)
 	}))
 	t.Cleanup(server.Close)
@@ -71,13 +72,11 @@ func TestSendMetrics_RetriesOn413WithLatestMetrics(t *testing.T) {
 		metricsHTTPClient = origClient
 	})
 
-	metrics := make([]Metric, 10)
-	for i := range metrics {
-		name := "old"
-		if i >= len(metrics)-6 {
-			name = "new"
-		}
-		metrics[i] = Metric{Metric: name, Value: float64(i), Timestamp: "2026-01-01T00:00:00Z"}
+	metrics := []Metric{
+		{Metric: "old", Value: 1, Timestamp: "2026-01-01T00:00:00Z"},
+		{Metric: "old", Value: 2, Timestamp: "2026-01-01T00:00:00Z"},
+		{Metric: "new", Value: 3, Timestamp: "2026-01-01T00:01:00Z"},
+		{Metric: "new", Value: 4, Timestamp: "2026-01-01T00:01:00Z"},
 	}
 
 	err := sendMetrics(Payload{
@@ -87,6 +86,23 @@ func TestSendMetrics_RetriesOn413WithLatestMetrics(t *testing.T) {
 	})
 	require.NoError(t, err)
 	assert.Equal(t, 2, requestCount)
+}
+
+func TestMetricsWithLatestTimestamp(t *testing.T) {
+	t.Parallel()
+
+	assert.Empty(t, metricsWithLatestTimestamp(nil))
+
+	input := []Metric{
+		{Metric: "a", Timestamp: "2026-01-01T00:00:00Z"},
+		{Metric: "b", Timestamp: "2026-01-01T00:01:00Z"},
+		{Metric: "c", Timestamp: "2026-01-01T00:01:00Z"},
+		{Metric: "d", Timestamp: "2026-01-01T00:00:30Z"},
+	}
+	got := metricsWithLatestTimestamp(input)
+	require.Len(t, got, 2)
+	assert.Equal(t, "b", got[0].Metric)
+	assert.Equal(t, "c", got[1].Metric)
 }
 
 func TestSendMetrics_413StillFailsWhenPayloadSmall(t *testing.T) {
