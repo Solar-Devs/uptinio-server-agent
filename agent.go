@@ -43,6 +43,17 @@ func main() {
 	defer collectTicker.Stop()
 	defer sendTicker.Stop()
 
+	var commandTickerC <-chan time.Time
+	pollSecs := effectiveCommandPollInterval(config.CommandPollIntervalInSeconds)
+	if pollSecs > 0 {
+		commandTicker := time.NewTicker(time.Duration(pollSecs) * time.Second)
+		defer commandTicker.Stop()
+		commandTickerC = commandTicker.C
+		log.Printf("Remote command polling enabled every %ds", pollSecs)
+	} else {
+		log.Println("Remote command polling disabled (command_poll_interval_in_seconds < 0)")
+	}
+
 	for {
 		select {
 		case <-collectTicker.C:
@@ -85,6 +96,9 @@ func main() {
 				log.Println("Metrics succesfully sent... cleaning metrics file")
 				_ = clearMetricsFile()
 			}
+
+		case <-commandTickerC:
+			pollAndRunCommands()
 		}
 	}
 }

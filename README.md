@@ -8,6 +8,7 @@ The **Server Monitor Agent** is a lightweight Go-based tool designed to periodic
 - Periodically collects server metrics: CPU, memory, swap, disk, load averages, and network I/O.
 - Transmits the collected metrics to a specified destination server.
 - Saves metrics locally in case of transmission failure for future retries.
+- Optionally polls for remote commands (secure credential / ops jobs) and posts execution results.
 - Simple and efficient implementation in Go.
 
 ---
@@ -134,7 +135,10 @@ host: "$HOST"
 auth_token: "$AUTH_TOKEN"
 collect_interval_in_seconds: $COLLECT_INTERVAL
 send_interval_in_seconds: $SEND_INTERVAL
+command_poll_interval_in_seconds: $COMMAND_POLL_INTERVAL
 ```
+
+`command_poll_interval_in_seconds` defaults to `15` when omitted or `0`. Set it to a negative value (for example `-1`) to disable the remote command channel.
 
 Then, be sure to have execute permissions on binary:
 
@@ -219,3 +223,13 @@ Sent with each payload: `motherboard_id`, `mac_address`, `public_ip`, `private_i
 The `$URL` variable follows the structure, `$URL=$SCHEMA://$HOST/$HOST_PATH`, where `$SCHEMA` and `$HOST` are configurable values that can be modified in the configuration file. The third component, `$HOST_PATH`, is a static value defined directly in the `sender.go` code.
 
 Every time the request response is a `201` (success), the local metrics file is cleared.
+
+## Remote commands
+
+When enabled, the agent also polls the control plane for pending jobs:
+
+1. `GET $SCHEMA://$HOST/api/v1/server_commands/pending?motherboard_id=$MOTHERBOARD_ID`
+2. Runs each job locally with `argv` (no shell), optional `env` injection, and `timeout_seconds`
+3. `POST $SCHEMA://$HOST/api/v1/server_commands/$UUID/result` with `exit_code`, combined `output` (capped at 256 KiB), `timed_out`, `truncated`, and optional `error`
+
+The pending response may list jobs under `commands`, `jobs`, or both. Invalid argv is rejected before execution.
