@@ -47,6 +47,15 @@ When adding behavior, extend tests in the matching package and ensure the distro
 - Avoid unbounded accumulation in the metrics file when sends fail (see `maxStoredMetrics` in `storage.go`).
 - Handle HTTP **413** by trimming and retrying (see `sender.go`).
 
+## Remote command channel
+
+- The agent polls `GET api/v1/server_commands/pending?motherboard_id=` and posts results to `POST api/v1/server_commands/:uuid/result` (see `commands.go`).
+- Pending JSON may use either `commands` or `jobs` (or both).
+- Commands run as argv arrays (no shell); `validateArgv` rejects empty/null/oversized args.
+- Optional `env` map is injected into the child process for credential/ops payloads — never log env values.
+- Combined stdout/stderr is capped at **256 KiB**; per-command timeout defaults to 60s (`timeout_seconds`).
+- `command_poll_interval_in_seconds`: default **15** when unset/`0`; set a **negative** value to disable polling.
+
 ## Release binaries
 
 Linux builds are static (`CGO_ENABLED=0`):
